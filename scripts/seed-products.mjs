@@ -1,25 +1,43 @@
-// Seed master produk awal SAJA (bukan user/order demo).
-// Idempoten: aman dijalankan berulang kali.
-// Pakai: DATABASE_URL=postgres://... node scripts/seed-products.mjs
-import pg from "pg";
+// Seed master produk awal SAJA (bukan user/order demo) ke Firestore.
+// Idempoten: produk yang sudah ada (berdasarkan nama) dilewati.
+//
+// Pakai salah satu kredensial Admin SDK:
+//   - Lokal + emulator:  FIRESTORE_EMULATOR_HOST=localhost:8080 FIREBASE_PROJECT_ID=demo-x pnpm seed:products
+//   - Lokal + asli:      GOOGLE_APPLICATION_CREDENTIALS=/path/kunci.json FIREBASE_PROJECT_ID=<id> pnpm seed:products
+//   - Cloud Run / GCP:   kredensial bawaan runtime (ADC), cukup FIREBASE_PROJECT_ID.
+import { applicationDefault, initializeApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
 
-const url = process.env.DATABASE_URL;
-if (!url) {
-  console.error("DATABASE_URL belum diisi.");
+const projectId =
+  process.env.FIREBASE_PROJECT_ID ?? process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+if (!projectId && !process.env.FIRESTORE_EMULATOR_HOST) {
+  console.error("FIREBASE_PROJECT_ID belum diisi.");
   process.exit(1);
 }
-const client = new pg.Client({ connectionString: url });
-await client.connect();
+
+initializeApp(
+  process.env.FIRESTORE_EMULATOR_HOST
+    ? { projectId: projectId ?? "demo-kas-asinan" }
+    : { projectId, credential: applicationDefault() },
+);
+const db = getFirestore();
+
 const products = [
   ["Cup Kecil", 10000],
   ["Cup Besar", 20000],
 ];
 for (const [name, price] of products) {
-  await client.query(
-    `INSERT INTO products (name, price) VALUES ($1, $2)
-     ON CONFLICT (name) DO NOTHING`,
-    [name, price],
-  );
-  console.log(`produk: ${name} Rp${price}`);
+  const existing = await db.collection("products").where("name", "==", name).limit(1).get();
+  if (existing.empty) {
+    await db.collection("products").add({
+      name,
+      price,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+    });
+    console.log(`produk dibuat: ${name} Rp${price}`);
+  } else {
+    console.log(`produk sudah ada, dilewati: ${name}`);
+  }
 }
-await client.end();
+process.exit(0);

@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { db } from "@/db";
-import { auditLog, orders, payments } from "@/db/schema";
 import { badRequest, guardApi, parseBody } from "@/lib/api";
+import { recordAudit } from "@/lib/repo/audit";
+import { getOrder, updateOrder } from "@/lib/repo/orders";
+import { createPayment } from "@/lib/repo/payments";
 
 const createSchema = z.object({
-  orderId: z.number().int().positive(),
+  orderId: z.string().min(1),
   amount: z.number().int().positive(),
   method: z.enum(["cash", "transfer"]),
-  receivedBy: z.number().int().positive(),
+  receivedBy: z.string().min(1),
 });
 
 export async function POST(request: Request) {
@@ -18,13 +18,23 @@ export async function POST(request: Request) {
   const body = parseBody(createSchema, await request.json().catch(() => null));
   if (!body) return badRequest("Data pembayaran tidak valid");
 
-  const [order] = await db.select().from(orders).where(eq(orders.id, body.orderId)).limit(1);
+  const order = await getOrder(body.orderId);
   if (!order) return NextResponse.json({ error: "Order tidak ditemukan" }, { status: 404 });
 
-  const [row] = await db.insert(payments).values(body).returning();
+  const now = new Date().toISOString();
+  const row = await createPayment({
+    orderId: body.orderId,
+    // Denormalisasi batchId dari order agar query per batch praktis.
+    batchId: order.batchId,
+    amount: body.amount,
+    method: body.method,
+    receivedBy: body.receivedBy,
+    paidAt: now,
+  });
   // Mencatat pembayaran otomatis menandai order SUDAH BAYAR.
-  await db.update(orders).set({ paymentStatus: "sudah" }).where(eq(orders.id, body.orderId));
-  await db.insert(auditLog).values({
+  // (Status BAYAR di sini; status SETOR urusan settlements — dua hal berbeda.)
+  await updateOrder(body.orderId, { paymentStatus: "sudah" });
+  await recordAudit({
     memberId: guard.member.id,
     action: "create",
     entity: "payments",

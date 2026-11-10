@@ -1,16 +1,15 @@
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { db } from "@/db";
-import { orderItems, orders } from "@/db/schema";
 import { badRequest, guardApi, idParam, parseBody } from "@/lib/api";
 import { snapshotItems } from "@/lib/orders";
+import { deleteOrder, getOrder, updateOrder } from "@/lib/repo/orders";
+import { deletePayment, listPaymentsByOrder } from "@/lib/repo/payments";
 
 const patchSchema = z.object({
-  customerId: z.number().int().positive().optional(),
+  customerId: z.string().min(1).optional(),
   source: z.enum(["wa", "langsung", "puskesmas"]).optional(),
   items: z
-    .array(z.object({ productId: z.number().int().positive(), qty: z.number().int().positive() }))
+    .array(z.object({ productId: z.string().min(1), qty: z.number().int().positive() }))
     .min(1)
     .optional(),
 });
@@ -24,20 +23,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!body) return badRequest("Data tidak valid");
 
   const { items, ...fields } = body;
-  if (Object.keys(fields).length > 0) {
-    await db.update(orders).set(fields).where(eq(orders.id, id));
-  }
+  const patch: Parameters<typeof updateOrder>[1] = { ...fields };
   if (items) {
-    let snapshots;
     try {
-      snapshots = await snapshotItems(items);
+      patch.items = await snapshotItems(items);
     } catch (e) {
       return badRequest(e instanceof Error ? e.message : "Produk tidak valid");
     }
-    await db.delete(orderItems).where(eq(orderItems.orderId, id));
-    await db.insert(orderItems).values(snapshots.map((i) => ({ ...i, orderId: id })));
   }
-  const [row] = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
+  const row = await updateOrder(id, patch);
   if (!row) return NextResponse.json({ error: "Tidak ditemukan" }, { status: 404 });
   return NextResponse.json(row);
 }
@@ -47,6 +41,12 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   if ("response" in guard) return guard.response;
   const id = idParam((await params).id);
   if (!id) return badRequest("ID tidak valid");
-  await db.delete(orders).where(eq(orders.id, id));
+  const existing = await getOrder(id);
+  if (!existing) return NextResponse.json({ error: "Tidak ditemukan" }, { status: 404 });
+  // Firestore tidak punya cascade: pembayaran milik order ini ikut dihapus.
+  for (const payment of await listPaymentsByOrder(id)) {
+    await deletePayment(payment.id);
+  }
+  await deleteOrder(id);
   return NextResponse.json({ ok: true });
 }

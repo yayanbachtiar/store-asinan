@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { db } from "@/db";
-import { advances, auditLog } from "@/db/schema";
 import { badRequest, guardApi, parseBody } from "@/lib/api";
+import { createAdvance } from "@/lib/repo/advances";
+import { recordAudit } from "@/lib/repo/audit";
 
 const createSchema = z.object({
-  batchId: z.number().int().positive(),
-  memberId: z.number().int().positive(),
+  batchId: z.string().min(1),
+  memberId: z.string().min(1),
   amount: z.number().int().positive(),
 });
 
@@ -15,8 +15,8 @@ export async function POST(request: Request) {
   if ("response" in guard) return guard.response;
   const body = parseBody(createSchema, await request.json().catch(() => null));
   if (!body) return badRequest("Data talangan tidak valid");
-  const [row] = await db.insert(advances).values(body).returning();
-  await db.insert(auditLog).values({
+  const row = await createAdvance({ ...body, status: "belum_diganti" });
+  await recordAudit({
     memberId: guard.member.id,
     action: "create",
     entity: "advances",

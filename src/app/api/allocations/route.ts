@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { db } from "@/db";
-import { auditLog, profitAllocations } from "@/db/schema";
 import { badRequest, guardApi, parseBody } from "@/lib/api";
+import { createAllocation } from "@/lib/repo/allocations";
+import { recordAudit } from "@/lib/repo/audit";
 
 const createSchema = z.object({
-  batchId: z.number().int().positive(),
+  batchId: z.string().min(1),
   kind: z.enum(["ditahan", "diputar", "dibagi"]),
-  memberId: z.number().int().positive().nullable().optional(),
+  memberId: z.string().min(1).nullable().optional(),
   amount: z.number().int().positive(),
   note: z.string().trim().max(200).optional(),
 });
@@ -20,17 +20,15 @@ export async function POST(request: Request) {
   if (body.kind === "dibagi" && !body.memberId) {
     return badRequest("Alokasi 'dibagi' wajib memilih anggota penerima");
   }
-  const [row] = await db
-    .insert(profitAllocations)
-    .values({
-      batchId: body.batchId,
-      kind: body.kind,
-      memberId: body.kind === "dibagi" ? body.memberId! : null,
-      amount: body.amount,
-      note: body.note || null,
-    })
-    .returning();
-  await db.insert(auditLog).values({
+  const row = await createAllocation({
+    batchId: body.batchId,
+    kind: body.kind,
+    memberId: body.kind === "dibagi" ? body.memberId! : null,
+    amount: body.amount,
+    note: body.note || null,
+    decidedAt: new Date().toISOString(),
+  });
+  await recordAudit({
     memberId: guard.member.id,
     action: "create",
     entity: "profit_allocations",

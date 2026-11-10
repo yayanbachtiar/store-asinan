@@ -13,7 +13,8 @@
  */
 
 export type OrderLike = {
-  id: number;
+  /** ID dokumen Firestore (string). */
+  id: string;
   customerName?: string;
   /** Total order, dihitung dari order_items (harga snapshot × qty). */
   total: number;
@@ -21,32 +22,32 @@ export type OrderLike = {
 };
 
 export type PaymentLike = {
-  orderId: number;
+  orderId: string;
   amount: number;
-  receivedBy: number;
+  receivedBy: string;
 };
 
 export type SettlementLike = {
-  memberId: number;
+  memberId: string;
   amount: number;
   status: "menunggu" | "diterima";
 };
 
 export type AdvanceLike = {
-  memberId: number;
+  memberId: string;
   amount: number;
   status: "belum_diganti" | "diganti";
 };
 
 export type AllocationLike = {
   kind: "ditahan" | "diputar" | "dibagi";
-  memberId?: number | null;
+  memberId?: string | null;
   amount: number;
 };
 
 export type BatchFinanceInput = {
-  /** members.id milik bendahara (role='bendahara'). */
-  treasurerId: number;
+  /** members.id (ID dokumen Firestore) milik bendahara (role='bendahara'). */
+  treasurerId: string;
   expenses: { amount: number }[];
   orders: OrderLike[];
   payments: PaymentLike[];
@@ -56,7 +57,7 @@ export type BatchFinanceInput = {
 };
 
 export type MemberPosition = {
-  memberId: number;
+  memberId: string;
   /** Total pembayaran pelanggan yang diterima anggota ini. */
   received: number;
   /** Total setoran anggota ini yang sudah diterima bendahara. */
@@ -107,8 +108,8 @@ export function computeBatchFinance(input: BatchFinanceInput): BatchFinance {
   const totalPaid = input.payments.reduce((s, p) => s + p.amount, 0);
 
   // Posisi per anggota: terima pembayaran − setoran yang sudah diterima.
-  const positions = new Map<number, MemberPosition>();
-  const ensure = (memberId: number): MemberPosition => {
+  const positions = new Map<string, MemberPosition>();
+  const ensure = (memberId: string): MemberPosition => {
     let pos = positions.get(memberId);
     if (!pos) {
       pos = { memberId, received: 0, settledAccepted: 0, settledPending: 0, outstanding: 0 };
@@ -166,7 +167,7 @@ export function computeBatchFinance(input: BatchFinanceInput): BatchFinance {
     outstandingAdvances,
     allocationTotal,
     allocationByKind,
-    memberPositions: [...positions.values()].sort((a, b) => a.memberId - b.memberId),
+    memberPositions: [...positions.values()].sort((a, b) => a.memberId.localeCompare(b.memberId)),
     reconciliationDiff: omzet - (treasurerCash + totalUnsettled + totalReceivable),
   };
 }

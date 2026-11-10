@@ -1,23 +1,22 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
-import { eq } from "drizzle-orm";
-import { db } from "@/db";
-import { members } from "@/db/schema";
+import { getMember } from "./repo/members";
 import { sessionSecret } from "./env";
+import type { MemberRole } from "./types";
 
 /**
- * Sesi dashboard: cookie bertanda tangan HMAC berisi member id.
- * Pola sama seperti PKPA — email harus terdaftar di tabel members
- * (whitelist), TANPA pembuatan akun otomatis, TANPA akun demo.
+ * Sesi dashboard: cookie bertanda tangan HMAC berisi member id (ID dokumen
+ * Firestore). Email harus terdaftar di collection members (whitelist),
+ * TANPA pembuatan akun otomatis, TANPA akun demo.
  */
 export const SESSION_COOKIE = "asinan_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 
 export type SessionMember = {
-  id: number;
+  id: string;
   name: string;
   email: string;
-  role: "bendahara" | "anggota";
+  role: MemberRole;
 };
 
 function sign(payload: string): string {
@@ -66,21 +65,17 @@ export async function clearSession(): Promise<void> {
 }
 
 /**
- * Member yang sedang login, divalidasi ulang ke DB (akun nonaktif / terhapus
- * langsung kehilangan akses). Bila DB sedang tidak terjangkau, token sesi
- * yang valid tetap diterima (fail-open tercatat, pola PKPA) agar dashboard
- * tidak terkunci total saat DB bermasalah sesaat.
+ * Member yang sedang login, divalidasi ulang ke Firestore (akun nonaktif /
+ * terhapus langsung kehilangan akses). Bila Firestore sedang tidak
+ * terjangkau, token sesi yang valid tetap diterima (fail-open tercatat,
+ * pola PKPA) agar dashboard tidak terkunci total saat DB bermasalah sesaat.
  */
 export async function getCurrentMember(): Promise<SessionMember | null> {
   const jar = await cookies();
   const tokenMember = readSessionToken(jar.get(SESSION_COOKIE)?.value);
   if (!tokenMember) return null;
   try {
-    const [row] = await db
-      .select({ id: members.id, name: members.name, email: members.email, role: members.role, isActive: members.isActive })
-      .from(members)
-      .where(eq(members.id, tokenMember.id))
-      .limit(1);
+    const row = await getMember(tokenMember.id);
     if (!row || !row.isActive) return null;
     return { id: row.id, name: row.name, email: row.email, role: row.role };
   } catch {

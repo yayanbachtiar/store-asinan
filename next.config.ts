@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Output standalone: image Docker kecil, VPS tinggal pull & run (tanpa build di VPS).
+  // Output standalone: satu server.js mandiri untuk image Docker Cloud Run.
+  // Server menghormati $PORT yang disuntikkan Cloud Run.
   output: "standalone",
 };
 

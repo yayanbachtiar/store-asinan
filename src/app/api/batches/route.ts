@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { db } from "@/db";
-import { auditLog, batches } from "@/db/schema";
 import { badRequest, guardApi, parseBody } from "@/lib/api";
+import { recordAudit } from "@/lib/repo/audit";
+import { createBatch } from "@/lib/repo/batches";
 
 const createSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal harus YYYY-MM-DD"),
@@ -16,16 +16,14 @@ export async function POST(request: Request) {
   const body = parseBody(createSchema, await request.json().catch(() => null));
   if (!body) return badRequest("Data batch tidak valid");
 
-  const [row] = await db
-    .insert(batches)
-    .values({
-      date: body.date,
-      title: body.title || null,
-      initialCapital: body.initialCapital,
-      createdBy: guard.member.id,
-    })
-    .returning();
-  await db.insert(auditLog).values({
+  const row = await createBatch({
+    date: body.date,
+    title: body.title || null,
+    status: "aktif",
+    initialCapital: body.initialCapital,
+    createdBy: guard.member.id,
+  });
+  await recordAudit({
     memberId: guard.member.id,
     action: "create",
     entity: "batches",

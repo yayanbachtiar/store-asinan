@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { db } from "@/db";
-import { auditLog, expenses } from "@/db/schema";
 import { badRequest, guardApi, parseBody } from "@/lib/api";
+import { recordAudit } from "@/lib/repo/audit";
+import { createExpense } from "@/lib/repo/expenses";
 
 const createSchema = z.object({
-  batchId: z.number().int().positive(),
+  batchId: z.string().min(1),
   description: z.string().trim().min(1).max(200),
   amount: z.number().int().positive(),
-  paidBy: z.number().int().positive(),
+  paidBy: z.string().min(1),
 });
 
 export async function POST(request: Request) {
@@ -17,8 +17,8 @@ export async function POST(request: Request) {
   const body = parseBody(createSchema, await request.json().catch(() => null));
   if (!body) return badRequest("Data pengeluaran tidak valid");
 
-  const [row] = await db.insert(expenses).values(body).returning();
-  await db.insert(auditLog).values({
+  const row = await createExpense({ ...body, createdVia: "dashboard" });
+  await recordAudit({
     memberId: guard.member.id,
     action: "create",
     entity: "expenses",

@@ -1,0 +1,28 @@
+# Google Cloud Build: bangun image Docker & push ke Container Registry (gcr.io).
+# Dipakai oleh scripts/deploy-cloudrun.sh — bisa juga dijalankan langsung:
+#   gcloud builds submit --config cloudbuild.yaml \
+#     --substitutions=_NEXT_PUBLIC_FIREBASE_API_KEY=...,_NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...,_NEXT_PUBLIC_FIREBASE_PROJECT_ID=...,_NEXT_PUBLIC_FIREBASE_APP_ID=...
+# Substitusi NEXT_PUBLIC_* boleh kosong (login tampil nonaktif).
+substitutions:
+  _NEXT_PUBLIC_FIREBASE_API_KEY: ""
+  _NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ""
+  _NEXT_PUBLIC_FIREBASE_PROJECT_ID: ""
+  _NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ""
+  _NEXT_PUBLIC_FIREBASE_APP_ID: ""
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --build-arg=NEXT_PUBLIC_FIREBASE_API_KEY=$_NEXT_PUBLIC_FIREBASE_API_KEY
+      - --build-arg=NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=$_NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+      - --build-arg=NEXT_PUBLIC_FIREBASE_PROJECT_ID=$_NEXT_PUBLIC_FIREBASE_PROJECT_ID
+      - --build-arg=NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=$_NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+      - --build-arg=NEXT_PUBLIC_FIREBASE_APP_ID=$_NEXT_PUBLIC_FIREBASE_APP_ID
+      - -t
+      - gcr.io/$PROJECT_ID/kas-asinan:$SHORT_SHA
+      - -t
+      - gcr.io/$PROJECT_ID/kas-asinan:latest
+      - .
+images:
+  - gcr.io/$PROJECT_ID/kas-asinan:$SHORT_SHA
+  - gcr.io/$PROJECT_ID/kas-asinan:latest

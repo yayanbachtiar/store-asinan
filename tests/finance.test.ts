@@ -11,17 +11,17 @@ import {
  * FIXTURE SINTETIS rekonstruksi laporan penjualan asinan 10 November 2026.
  * Angka totalnya nyata (dari laporan manual tim), tetapi susunan
  * received_by per pembayaran adalah rekonstruksi untuk menguji matematika
- * rekonsiliasi: pembayaran yang diterima bendahara (Wening, id=1) diatur
+ * rekonsiliasi: pembayaran yang diterima bendahara (Wening) diatur
  * cash Rp80.000 + transfer Dr. Ami Rp40.000 = kas Rp120.000, dan sisa
  * Rp70.000 berada di tangan anggota lain (belum disetor).
  */
-const TREASURER = 1; // Wening — bendahara
-const MEMBER_A = 2;
-const MEMBER_B = 3;
+const TREASURER = "member-wening"; // Wening — bendahara (ID dokumen Firestore = string)
+const MEMBER_A = "member-a";
+const MEMBER_B = "member-b";
 
 let nextOrderId = 1;
-function order(customerName: string, total: number, paidTo?: number) {
-  const id = nextOrderId++;
+function order(customerName: string, total: number, paidTo?: string) {
+  const id = `order-${nextOrderId++}`;
   return {
     orderRow: { id, customerName, total, paymentStatus: (paidTo ? "sudah" : "belum") as "sudah" | "belum" },
     payment: paidTo ? { orderId: id, amount: total, receivedBy: paidTo } : null,
@@ -139,7 +139,7 @@ describe("validasi alokasi laba", () => {
     ]);
     expect(ok).toEqual({ ok: true, total: 85_000, diff: 0 });
 
-    const kurang = validateAllocations(85_000, [{ kind: "dibagi", memberId: 1, amount: 17_000 }]);
+    const kurang = validateAllocations(85_000, [{ kind: "dibagi", memberId: TREASURER, amount: 17_000 }]);
     expect(kurang.ok).toBe(false);
     expect(kurang.diff).toBe(-68_000);
 
@@ -161,9 +161,9 @@ describe("pembantu lain", () => {
 
   it("groupReceivables mengelompokkan piutang per pelanggan", () => {
     const groups = groupReceivables([
-      { id: 1, customerName: "Drg. Dewi", total: 40_000, paymentStatus: "belum" as const },
-      { id: 2, customerName: "Karin", total: 10_000, paymentStatus: "belum" as const },
-      { id: 3, customerName: "Karin", total: 10_000, paymentStatus: "sudah" as const },
+      { id: "o1", customerName: "Drg. Dewi", total: 40_000, paymentStatus: "belum" as const },
+      { id: "o2", customerName: "Karin", total: 10_000, paymentStatus: "belum" as const },
+      { id: "o3", customerName: "Karin", total: 10_000, paymentStatus: "sudah" as const },
     ]);
     expect(groups).toHaveLength(2);
     expect(groups[0]).toMatchObject({ customerName: "Drg. Dewi", total: 40_000 });

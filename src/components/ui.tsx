@@ -21,9 +21,9 @@ export function DbUnavailable() {
     <div className="rounded-2xl border border-amber-300 bg-amber-100 p-4 text-sm">
       <p className="font-semibold">Database belum tersedia.</p>
       <p className="mt-1 text-stone-600">
-        Halaman ini membaca database saat runtime. Pastikan <code>DATABASE_URL</code> terisi,
-        migrasi sudah dijalankan, dan produk awal sudah di-seed (
-        <code>pnpm db:seed-products</code>).
+        Halaman ini membaca Firestore saat runtime. Pastikan konfigurasi Firebase
+        (project ID &amp; kredensial Admin SDK / service account Cloud Run) sudah benar,
+        dan produk awal sudah di-seed (<code>pnpm seed:products</code>).
       </p>
     </div>
   );

@@ -21,7 +21,8 @@ export function parseBody<T>(schema: z.ZodType<T>, body: unknown): T | null {
   return result.success ? result.data : null;
 }
 
-export const idParam = (raw: string): number | null => {
-  const n = Number(raw);
-  return Number.isInteger(n) && n > 0 ? n : null;
+/** ID route param = ID dokumen Firestore (string); cukup pastikan tidak kosong. */
+export const idParam = (raw: string): string | null => {
+  const trimmed = raw.trim();
+  return trimmed.length > 0 ? trimmed : null;
 };

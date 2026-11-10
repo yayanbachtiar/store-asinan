@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { db } from "@/db";
-import { auditLog, members, settlements } from "@/db/schema";
 import { badRequest, guardApi, parseBody } from "@/lib/api";
+import { recordAudit } from "@/lib/repo/audit";
+import { getTreasurer } from "@/lib/repo/members";
+import { createSettlement } from "@/lib/repo/settlements";
 
 const createSchema = z.object({
-  memberId: z.number().int().positive(),
+  memberId: z.string().min(1),
   amount: z.number().int().positive(),
 });
 
@@ -16,18 +16,17 @@ export async function POST(request: Request) {
   const body = parseBody(createSchema, await request.json().catch(() => null));
   if (!body) return badRequest("Data setoran tidak valid");
 
-  const [treasurer] = await db
-    .select()
-    .from(members)
-    .where(eq(members.role, "bendahara"))
-    .limit(1);
+  const treasurer = await getTreasurer();
   if (!treasurer) return badRequest("Belum ada anggota berperan bendahara");
 
-  const [row] = await db
-    .insert(settlements)
-    .values({ memberId: body.memberId, amount: body.amount, receivedBy: treasurer.id })
-    .returning();
-  await db.insert(auditLog).values({
+  const row = await createSettlement({
+    memberId: body.memberId,
+    amount: body.amount,
+    receivedBy: treasurer.id,
+    status: "menunggu",
+    settledAt: null,
+  });
+  await recordAudit({
     memberId: guard.member.id,
     action: "create",
     entity: "settlements",

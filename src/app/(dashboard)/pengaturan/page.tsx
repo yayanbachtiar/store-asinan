@@ -63,7 +63,7 @@ export default async function PengaturanPage() {
         <div className="rounded-2xl border border-amber-200 bg-white p-4 shadow-sm">
           {productList.length === 0 && (
             <p className="text-sm text-stone-500">
-              Belum ada produk. Jalankan <code>pnpm db:seed-products</code> untuk produk awal
+              Belum ada produk. Jalankan <code>pnpm seed:products</code> untuk produk awal
               (Cup Kecil &amp; Cup Besar) atau tambahkan manual.
             </p>
           )}

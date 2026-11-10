@@ -1,12 +1,11 @@
-import { googleConfigured } from "@/lib/env";
+import { GoogleLoginButton } from "@/components/google-login-button";
+import { firebaseClientConfigured } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
 const ERROR_MESSAGES: Record<string, string> = {
   "email-tidak-terdaftar":
     "Email Google kamu belum terdaftar sebagai anggota. Minta anggota yang sudah bisa masuk untuk menambahkan emailmu di halaman Pengaturan.",
-  "oauth-gagal": "Login Google gagal atau dibatalkan. Silakan coba lagi.",
-  "google-belum-dikonfigurasi": "Login Google belum dikonfigurasi di server.",
   "database-tidak-tersedia": "Database sedang tidak tersedia. Coba lagi sebentar lagi.",
 };
 
@@ -29,13 +28,8 @@ export default async function LoginPage({
             {ERROR_MESSAGES[error] ?? "Terjadi kesalahan saat login."}
           </p>
         )}
-        {googleConfigured ? (
-          <a
-            href="/api/auth/google"
-            className="mt-6 block rounded-lg bg-amber-600 px-4 py-3 text-center font-semibold text-white hover:bg-amber-700"
-          >
-            Masuk dengan Google
-          </a>
+        {firebaseClientConfigured ? (
+          <GoogleLoginButton />
         ) : (
           <div className="mt-6">
             <button
@@ -46,9 +40,11 @@ export default async function LoginPage({
               Masuk dengan Google (belum aktif)
             </button>
             <p className="mt-2 text-xs text-stone-500">
-              Tombol ini aktif setelah admin mengisi <code>GOOGLE_CLIENT_ID</code> dan{" "}
-              <code>GOOGLE_CLIENT_SECRET</code> di server. Tidak ada akun demo — akun pertama
-              didaftarkan langsung di tabel <code>members</code> database.
+              Tombol ini aktif setelah admin mengisi konfigurasi Firebase (
+              <code>NEXT_PUBLIC_FIREBASE_API_KEY</code>, <code>NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN</code>,{" "}
+              <code>NEXT_PUBLIC_FIREBASE_PROJECT_ID</code>, <code>NEXT_PUBLIC_FIREBASE_APP_ID</code>)
+              saat build/deploy. Tidak ada akun demo — akun pertama didaftarkan langsung di
+              collection <code>members</code> Firestore.
             </p>
           </div>
         )}

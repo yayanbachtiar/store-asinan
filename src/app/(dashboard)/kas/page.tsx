@@ -89,7 +89,7 @@ export default async function KasPage() {
         {data.advances.map((a) => (
           <div key={a.id} className="flex items-center justify-between border-b border-stone-100 py-2 text-sm last:border-0">
             <span>
-              {a.memberName} — batch #{a.batchId} — {formatRp(a.amount)}
+              {a.memberName} — batch {a.batchDate} — {formatRp(a.amount)}
             </span>
             <span className="flex items-center gap-3">
               <span className={a.status === "diganti" ? "text-emerald-700" : "text-red-700"}>

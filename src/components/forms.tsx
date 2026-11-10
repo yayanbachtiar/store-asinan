@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-type MemberOpt = { id: number; name: string; role?: string };
-type CustomerOpt = { id: number; name: string };
-type ProductOpt = { id: number; name: string; price: number; isActive?: boolean };
+type MemberOpt = { id: string; name: string; role?: string };
+type CustomerOpt = { id: string; name: string };
+type ProductOpt = { id: string; name: string; price: number; isActive?: boolean };
 
 async function api(path: string, method: string, body?: unknown): Promise<string | null> {
   const res = await fetch(path, {
@@ -140,11 +140,11 @@ export function BatchForm() {
 
 /* ---------------- Pengeluaran ---------------- */
 
-export function ExpenseForm({ batchId, members }: { batchId: number; members: MemberOpt[] }) {
+export function ExpenseForm({ batchId, members }: { batchId: string; members: MemberOpt[] }) {
   const { error, busy, run } = useSubmit();
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
-  const [paidBy, setPaidBy] = useState(members[0]?.id ?? 0);
+  const [paidBy, setPaidBy] = useState(members[0]?.id ?? "");
   return (
     <form
       className={card}
@@ -156,7 +156,7 @@ export function ExpenseForm({ batchId, members }: { batchId: number; members: Me
               batchId,
               description,
               amount: Number(amount),
-              paidBy: Number(paidBy),
+              paidBy,
             }),
           () => {
             setDescription("");
@@ -177,7 +177,7 @@ export function ExpenseForm({ batchId, members }: { batchId: number; members: Me
         </div>
         <div>
           <label>Dibayar oleh</label>
-          <select value={paidBy} onChange={(e) => setPaidBy(Number(e.target.value))}>
+          <select value={paidBy} onChange={(e) => setPaidBy(e.target.value)}>
             {members.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.name}
@@ -201,15 +201,15 @@ export function OrderForm({
   customers,
   products,
 }: {
-  batchId: number;
+  batchId: string;
   customers: CustomerOpt[];
   products: ProductOpt[];
 }) {
   const { error, busy, run } = useSubmit();
-  const [customerId, setCustomerId] = useState(customers[0]?.id ?? 0);
+  const [customerId, setCustomerId] = useState(customers[0]?.id ?? "");
   const [source, setSource] = useState("wa");
-  const [items, setItems] = useState<{ productId: number; qty: number }[]>([
-    { productId: products[0]?.id ?? 0, qty: 1 },
+  const [items, setItems] = useState<{ productId: string; qty: number }[]>([
+    { productId: products[0]?.id ?? "", qty: 1 },
   ]);
   const activeProducts = products.filter((p) => p.isActive !== false);
   return (
@@ -220,9 +220,9 @@ export function OrderForm({
         void run(() =>
           api("/api/orders", "POST", {
             batchId,
-            customerId: Number(customerId),
+            customerId,
             source,
-            items: items.filter((i) => i.productId > 0 && i.qty > 0),
+            items: items.filter((i) => i.productId !== "" && i.qty > 0),
           }),
         );
       }}
@@ -231,7 +231,7 @@ export function OrderForm({
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <label>Pelanggan</label>
-          <select value={customerId} onChange={(e) => setCustomerId(Number(e.target.value))}>
+          <select value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
             {customers.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -257,7 +257,7 @@ export function OrderForm({
                 value={item.productId}
                 onChange={(e) => {
                   const next = [...items];
-                  next[idx] = { ...next[idx], productId: Number(e.target.value) };
+                  next[idx] = { ...next[idx], productId: e.target.value };
                   setItems(next);
                 }}
               >
@@ -296,7 +296,7 @@ export function OrderForm({
           type="button"
           className="text-xs font-medium text-amber-700 underline"
           onClick={() =>
-            setItems([...items, { productId: activeProducts[0]?.id ?? 0, qty: 1 }])
+            setItems([...items, { productId: activeProducts[0]?.id ?? "", qty: 1 }])
           }
         >
           + Item lain
@@ -322,7 +322,7 @@ export function PaymentForm({
   defaultAmount,
   members,
 }: {
-  orderId: number;
+  orderId: string;
   defaultAmount: number;
   members: MemberOpt[];
 }) {
@@ -330,7 +330,7 @@ export function PaymentForm({
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState(String(defaultAmount));
   const [method, setMethod] = useState("cash");
-  const [receivedBy, setReceivedBy] = useState(members[0]?.id ?? 0);
+  const [receivedBy, setReceivedBy] = useState(members[0]?.id ?? "");
   if (!open) {
     return (
       <button
@@ -352,7 +352,7 @@ export function PaymentForm({
             orderId,
             amount: Number(amount),
             method,
-            receivedBy: Number(receivedBy),
+            receivedBy,
           }),
         );
       }}
@@ -371,7 +371,7 @@ export function PaymentForm({
         </div>
         <div>
           <label>Diterima oleh</label>
-          <select value={receivedBy} onChange={(e) => setReceivedBy(Number(e.target.value))}>
+          <select value={receivedBy} onChange={(e) => setReceivedBy(e.target.value)}>
             {members.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.name}
@@ -397,7 +397,7 @@ export function PaymentForm({
 
 export function SettlementForm({ members }: { members: MemberOpt[] }) {
   const { error, busy, run } = useSubmit();
-  const [memberId, setMemberId] = useState(members[0]?.id ?? 0);
+  const [memberId, setMemberId] = useState(members[0]?.id ?? "");
   const [amount, setAmount] = useState("");
   return (
     <form
@@ -405,7 +405,7 @@ export function SettlementForm({ members }: { members: MemberOpt[] }) {
       onSubmit={(e) => {
         e.preventDefault();
         void run(
-          () => api("/api/settlements", "POST", { memberId: Number(memberId), amount: Number(amount) }),
+          () => api("/api/settlements", "POST", { memberId, amount: Number(amount) }),
           () => setAmount(""),
         );
       }}
@@ -414,7 +414,7 @@ export function SettlementForm({ members }: { members: MemberOpt[] }) {
       <div className="grid gap-3 sm:grid-cols-3">
         <div>
           <label>Yang menyetor</label>
-          <select value={memberId} onChange={(e) => setMemberId(Number(e.target.value))}>
+          <select value={memberId} onChange={(e) => setMemberId(e.target.value)}>
             {members.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.name}
@@ -442,9 +442,9 @@ export function SettlementForm({ members }: { members: MemberOpt[] }) {
 
 /* ---------------- Talangan ---------------- */
 
-export function AdvanceForm({ batchId, members }: { batchId: number; members: MemberOpt[] }) {
+export function AdvanceForm({ batchId, members }: { batchId: string; members: MemberOpt[] }) {
   const { error, busy, run } = useSubmit();
-  const [memberId, setMemberId] = useState(members[0]?.id ?? 0);
+  const [memberId, setMemberId] = useState(members[0]?.id ?? "");
   const [amount, setAmount] = useState("");
   return (
     <form
@@ -455,7 +455,7 @@ export function AdvanceForm({ batchId, members }: { batchId: number; members: Me
           () =>
             api("/api/advances", "POST", {
               batchId,
-              memberId: Number(memberId),
+              memberId,
               amount: Number(amount),
             }),
           () => setAmount(""),
@@ -466,7 +466,7 @@ export function AdvanceForm({ batchId, members }: { batchId: number; members: Me
       <div className="grid gap-3 sm:grid-cols-3">
         <div>
           <label>Yang menalangi</label>
-          <select value={memberId} onChange={(e) => setMemberId(Number(e.target.value))}>
+          <select value={memberId} onChange={(e) => setMemberId(e.target.value)}>
             {members.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.name}
@@ -491,10 +491,10 @@ export function AdvanceForm({ batchId, members }: { batchId: number; members: Me
 
 /* ---------------- Alokasi laba ---------------- */
 
-export function AllocationForm({ batchId, members }: { batchId: number; members: MemberOpt[] }) {
+export function AllocationForm({ batchId, members }: { batchId: string; members: MemberOpt[] }) {
   const { error, busy, run } = useSubmit();
   const [kind, setKind] = useState("diputar");
-  const [memberId, setMemberId] = useState(members[0]?.id ?? 0);
+  const [memberId, setMemberId] = useState(members[0]?.id ?? "");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   return (
@@ -507,7 +507,7 @@ export function AllocationForm({ batchId, members }: { batchId: number; members:
             api("/api/allocations", "POST", {
               batchId,
               kind,
-              memberId: kind === "dibagi" ? Number(memberId) : null,
+              memberId: kind === "dibagi" ? memberId : null,
               amount: Number(amount),
               note: note || undefined,
             }),
@@ -531,7 +531,7 @@ export function AllocationForm({ batchId, members }: { batchId: number; members:
         {kind === "dibagi" && (
           <div>
             <label>Dibagikan ke</label>
-            <select value={memberId} onChange={(e) => setMemberId(Number(e.target.value))}>
+            <select value={memberId} onChange={(e) => setMemberId(e.target.value)}>
               {members.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.name}
@@ -603,7 +603,7 @@ export function CustomerEdit({
   initialName,
   initialNote,
 }: {
-  id: number;
+  id: string;
   initialName: string;
   initialNote: string | null;
 }) {
@@ -729,7 +729,7 @@ export function ProductForm() {
   );
 }
 
-export function ProductPriceEdit({ id, initialPrice }: { id: number; initialPrice: number }) {
+export function ProductPriceEdit({ id, initialPrice }: { id: string; initialPrice: number }) {
   const { error, busy, run } = useSubmit();
   const [price, setPrice] = useState(String(initialPrice));
   return (

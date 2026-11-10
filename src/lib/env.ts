@@ -7,23 +7,57 @@ const optionalText = z.preprocess(
 );
 
 const envSchema = z.object({
-  DATABASE_URL: optionalText,
   ["SESSION_" + "SECRET"]: optionalText,
-  GOOGLE_CLIENT_ID: optionalText,
-  ["GOOGLE_CLIENT_" + "SECRET"]: optionalText,
   NEXT_PUBLIC_APP_URL: optionalText,
+  // Firebase — server (Admin SDK)
+  FIREBASE_PROJECT_ID: optionalText,
+  // Firebase — client (ditanam saat build lewat NEXT_PUBLIC_*)
+  NEXT_PUBLIC_FIREBASE_API_KEY: optionalText,
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: optionalText,
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID: optionalText,
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: optionalText,
+  NEXT_PUBLIC_FIREBASE_APP_ID: optionalText,
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: optionalText,
 });
 
 export const env = envSchema.parse({
-  DATABASE_URL: process.env.DATABASE_URL,
   ["SESSION_" + "SECRET"]: process.env["SESSION_" + "SECRET"],
-  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
-  ["GOOGLE_CLIENT_" + "SECRET"]: process.env["GOOGLE_CLIENT_" + "SECRET"],
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
+  NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  NEXT_PUBLIC_FIREBASE_APP_ID: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
 });
 
-export const googleConfigured = Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
+/** Project ID Firebase: env server didahulukan, fallback ke env publik. */
+export const firebaseProjectId = env.FIREBASE_PROJECT_ID ?? env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+
+/**
+ * Konfigurasi Firebase Web SDK (untuk Firebase Authentication di browser).
+ * null bila belum lengkap → halaman login menampilkan tombol nonaktif +
+ * penjelasan, BUKAN tombol palsu. Nilai NEXT_PUBLIC_* ditanam saat build.
+ */
+export const firebaseClientConfig =
+  env.NEXT_PUBLIC_FIREBASE_API_KEY &&
+  env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN &&
+  env.NEXT_PUBLIC_FIREBASE_PROJECT_ID &&
+  env.NEXT_PUBLIC_FIREBASE_APP_ID
+    ? {
+        apiKey: env.NEXT_PUBLIC_FIREBASE_API_KEY,
+        authDomain: env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+        projectId: env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        messagingSenderId: env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+        appId: env.NEXT_PUBLIC_FIREBASE_APP_ID,
+        storageBucket: env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+      }
+    : null;
+
+export const firebaseClientConfigured = firebaseClientConfig !== null;
+
 export const appUrl = env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-/** Hanya untuk pengembangan lokal — di produksi WAJIB isi SESSION_SECRET. */
+/** Hanya untuk pengembangan lokal — di produksi WAJIB isi SESSION_SECRET (Secret Manager). */
 export const sessionSecret =
   env.SESSION_SECRET ?? "asinan-dev-secret-ganti-di-produksi";

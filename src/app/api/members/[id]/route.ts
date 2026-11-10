@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { db } from "@/db";
-import { members } from "@/db/schema";
 import { badRequest, guardApi, idParam, parseBody } from "@/lib/api";
+import {
+  findMemberByEmail,
+  findMemberByTelegramId,
+  updateMember,
+} from "@/lib/repo/members";
 
 const patchSchema = z.object({
   name: z.string().trim().min(1).max(120).optional(),
@@ -25,11 +27,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!id) return badRequest("ID tidak valid");
   const body = parseBody(patchSchema, await request.json().catch(() => null));
   if (!body) return badRequest("Data tidak valid");
-  try {
-    const [row] = await db.update(members).set(body).where(eq(members.id, id)).returning();
-    if (!row) return NextResponse.json({ error: "Tidak ditemukan" }, { status: 404 });
-    return NextResponse.json(row);
-  } catch {
-    return badRequest("Email / Telegram ID sudah dipakai anggota lain");
+  if (body.email) {
+    const other = await findMemberByEmail(body.email);
+    if (other && other.id !== id) return badRequest("Email sudah dipakai anggota lain");
   }
+  if (body.telegramId) {
+    const other = await findMemberByTelegramId(body.telegramId);
+    if (other && other.id !== id) return badRequest("Telegram ID sudah dipakai anggota lain");
+  }
+  const row = await updateMember(id, body);
+  if (!row) return NextResponse.json({ error: "Tidak ditemukan" }, { status: 404 });
+  return NextResponse.json(row);
 }

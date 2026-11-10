@@ -20,8 +20,7 @@ export default async function BatchDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const id = Number((await params).id);
-  if (!Number.isInteger(id)) notFound();
+  const id = (await params).id; // ID dokumen Firestore (string)
 
   let detail: Awaited<ReturnType<typeof getBatchDetail>> = null;
   let memberList: Awaited<ReturnType<typeof listMembers>> = [];

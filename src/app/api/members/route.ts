@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { db } from "@/db";
-import { members } from "@/db/schema";
 import { badRequest, guardApi, parseBody } from "@/lib/api";
+import {
+  createMember,
+  findMemberByEmail,
+  findMemberByTelegramId,
+} from "@/lib/repo/members";
 
 const createSchema = z.object({
   name: z.string().trim().min(1).max(120),
-  email: z.string().trim().email().transform((v) => v.toLowerCase()),
+  email: z
+    .string()
+    .trim()
+    .email()
+    .transform((v) => v.toLowerCase()),
   role: z.enum(["bendahara", "anggota"]).default("anggota"),
   telegramId: z.string().trim().max(64).optional(),
 });
@@ -16,13 +23,20 @@ export async function POST(request: Request) {
   if ("response" in guard) return guard.response;
   const body = parseBody(createSchema, await request.json().catch(() => null));
   if (!body) return badRequest("Data anggota tidak valid");
-  try {
-    const [row] = await db
-      .insert(members)
-      .values({ ...body, telegramId: body.telegramId || null })
-      .returning();
-    return NextResponse.json(row, { status: 201 });
-  } catch {
-    return badRequest("Email / Telegram ID sudah dipakai anggota lain");
+  // Firestore tidak punya unique constraint — keunikan email / Telegram ID
+  // dijaga di lapisan aplikasi.
+  if (await findMemberByEmail(body.email)) {
+    return badRequest("Email sudah dipakai anggota lain");
   }
+  if (body.telegramId && (await findMemberByTelegramId(body.telegramId))) {
+    return badRequest("Telegram ID sudah dipakai anggota lain");
+  }
+  const row = await createMember({
+    name: body.name,
+    email: body.email,
+    role: body.role,
+    telegramId: body.telegramId || null,
+    isActive: true,
+  });
+  return NextResponse.json(row, { status: 201 });
 }
