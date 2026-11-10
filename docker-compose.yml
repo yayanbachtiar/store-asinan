@@ -1,0 +1,30 @@
+# Contoh untuk VPS: app mengambil image dari GHCR, db PostgreSQL lokal.
+# Di VPS: isi .env (DATABASE_URL, SESSION_SECRET, GOOGLE_*, NEXT_PUBLIC_APP_URL),
+# lalu `docker compose pull && docker compose up -d`.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: asinan
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ganti-password-ini}
+      POSTGRES_DB: asinan
+    volumes:
+      - asinan-db:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  app:
+    image: ghcr.io/GANTI-OWNER/asinan-app:latest
+    environment:
+      DATABASE_URL: postgres://asinan:${POSTGRES_PASSWORD:-ganti-password-ini}@db:5432/asinan
+      SESSION_SECRET: ${SESSION_SECRET:?isi-di-env}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    restart: unless-stopped
+
+volumes:
+  asinan-db:
