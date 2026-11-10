@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Deploy Kas Asinan ke Google Cloud Run — SATU perintah setelah persiapan
-# di README selesai (project Firebase + Firestore + secret dibuat).
+# Deploy Kas Asinan — SATU perintah setelah persiapan di README selesai.
+# Seluruh pipeline (test → build → push Artifact Registry → deploy Cloud Run)
+# berjalan di Google Cloud Build lewat cloudbuild.yaml; script ini hanya
+# mengirimnya. Tidak ada langkah deploy terpisah di komputer lokal.
 #
 # Wajib (env):
 #   GCP_PROJECT_ID                 Project ID Firebase/GCP, mis. kas-asinan-xxxx
@@ -25,32 +27,17 @@ SECRET_NAME="${SESSION_SECRET_NAME:-kas-asinan-session-secret}"
 
 cd "$(dirname "$0")/.."
 
-echo "==> Build image via Cloud Build (project: $PROJECT_ID, region: $REGION)"
+echo "==> Kirim pipeline ke Cloud Build (project: $PROJECT_ID, region: $REGION)"
 gcloud builds submit \
   --project "$PROJECT_ID" \
-  --config cloudbuild.yaml \
-  --substitutions="_NEXT_PUBLIC_FIREBASE_API_KEY=${NEXT_PUBLIC_FIREBASE_API_KEY:-},_NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN:-},_NEXT_PUBLIC_FIREBASE_PROJECT_ID=$PROJECT_ID,_NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID:-},_NEXT_PUBLIC_FIREBASE_APP_ID=${NEXT_PUBLIC_FIREBASE_APP_ID:-}" \
-  .
-
-echo "==> Deploy ke Cloud Run"
-# --allow-unauthenticated: akses publik diizinkan di tingkat Cloud Run;
-# otorisasi sesungguhnya ditangani aplikasi (login Firebase + whitelist members).
-# min-instances 0 = scale-to-zero (hemat, cocok untuk 5 pengguna).
-gcloud run deploy "$SERVICE" \
-  --project "$PROJECT_ID" \
   --region "$REGION" \
-  --image "gcr.io/$PROJECT_ID/kas-asinan:latest" \
-  --platform managed \
-  --allow-unauthenticated \
-  --min-instances 0 \
-  --max-instances 3 \
-  --set-env-vars "FIREBASE_PROJECT_ID=$PROJECT_ID" \
-  --set-secrets "SESSION_SECRET=$SECRET_NAME:latest"
+  --config cloudbuild.yaml \
+  --substitutions="_REGION=$REGION,_SESSION_SECRET_NAME=$SECRET_NAME,_NEXT_PUBLIC_FIREBASE_API_KEY=${NEXT_PUBLIC_FIREBASE_API_KEY:-},_NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN:-},_NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID:-},_NEXT_PUBLIC_FIREBASE_APP_ID=${NEXT_PUBLIC_FIREBASE_APP_ID:-}" \
+  .
 
 URL="$(gcloud run services describe "$SERVICE" --project "$PROJECT_ID" --region "$REGION" --format='value(status.url)')"
 echo ""
 echo "Selesai. URL layanan: $URL"
 echo "Langkah terakhir (sekali saja):"
-echo "1. Set NEXT_PUBLIC_APP_URL=$URL lalu deploy ulang, ATAU abaikan (hanya dipakai redirect logout)."
-echo "2. Tambahkan domain ${URL#https://} ke Firebase Console → Authentication → Settings → Authorized domains."
-echo "3. Seed produk:  FIREBASE_PROJECT_ID=$PROJECT_ID pnpm seed:products"
+echo "1. Tambahkan domain ${URL#https://} ke Firebase Console → Authentication → Settings → Authorized domains."
+echo "2. Seed produk:  FIREBASE_PROJECT_ID=$PROJECT_ID pnpm seed:products"

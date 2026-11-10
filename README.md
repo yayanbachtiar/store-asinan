@@ -86,12 +86,19 @@ sesi HMAC berisi member id.
    NEXT_PUBLIC_FIREBASE_APP_ID=<appId> \
    bash scripts/deploy-cloudrun.sh
    ```
-   Script membangun image via Cloud Build (region `asia-southeast2`),
-   lalu `gcloud run deploy kas-asinan --allow-unauthenticated
-   --min-instances 0 --max-instances 3` dengan env `FIREBASE_PROJECT_ID`
-   dan `SESSION_SECRET` dari Secret Manager. `--allow-unauthenticated`
-   hanya membuka akses di tingkat Cloud Run; otorisasi tetap ditangani
-   aplikasi (semua halaman/API menolak tanpa sesi anggota).
+   Script mengirim `cloudbuild.yaml` ke **Cloud Build** — seluruh pipeline
+   berjalan di GCP: typecheck + test → build image → push ke **Artifact
+   Registry** → deploy `kas-asinan` ke Cloud Run (region `asia-southeast2`,
+   `--allow-unauthenticated --min-instances 0 --max-instances 3`, env
+   `FIREBASE_PROJECT_ID`, `SESSION_SECRET` dari Secret Manager).
+   `--allow-unauthenticated` hanya membuka akses di tingkat Cloud Run;
+   otorisasi tetap ditangani aplikasi (semua halaman/API menolak tanpa
+   sesi anggota). Persiapan sekali sebelum deploy pertama: buat repository
+   Artifact Registry-nya:
+   ```bash
+   gcloud artifacts repositories create kas-asinan \
+     --repository-format=docker --location=asia-southeast2
+   ```
 8. **Setelah URL Cloud Run keluar** (format
    `https://kas-asinan-xxxxx-xx.a.run.app`):
    - Tambahkan domain itu ke Firebase Console → Authentication → Settings →
@@ -102,9 +109,13 @@ sesi HMAC berisi member id.
    - Login sebagai bendahara → tambahkan 4 anggota lain di halaman
      **Pengaturan**.
 
-Deploy ulang berikutnya cukup langkah 7. Jalur GitHub Actions
-(`.github/workflows/deploy-cloudrun.yml`, manual `workflow_dispatch`)
-tersedia sebagai opsi; CI (`ci.yml`) hanya menjalankan typecheck+test+build.
+Deploy ulang berikutnya cukup langkah 7. **Tidak ada jalur GitHub Actions**
+— akun GitHub user terkunci billing untuk Actions, jadi build, test, dan
+deploy semuanya di GCP. Bila ingin otomatis tiap push ke `main`, buat
+trigger di Cloud Build (Console → Cloud Build → Triggers → hubungkan repo
+ini, event push ke `^main$`, configuration `cloudbuild.yaml`, isi
+substitution `NEXT_PUBLIC_*` di trigger) — detailnya di komentar kepala
+`cloudbuild.yaml`.
 
 ## Jalan lokal
 

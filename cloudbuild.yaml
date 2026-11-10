@@ -1,28 +1,108 @@
-# Google Cloud Build: bangun image Docker & push ke Container Registry (gcr.io).
-# Dipakai oleh scripts/deploy-cloudrun.sh — bisa juga dijalankan langsung:
-#   gcloud builds submit --config cloudbuild.yaml \
-#     --substitutions=_NEXT_PUBLIC_FIREBASE_API_KEY=...,_NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...,_NEXT_PUBLIC_FIREBASE_PROJECT_ID=...,_NEXT_PUBLIC_FIREBASE_APP_ID=...
-# Substitusi NEXT_PUBLIC_* boleh kosong (login tampil nonaktif).
+# ============================================================================
+# Kas Asinan — Pipeline LENGKAP di Google Cloud Build (tanpa GitHub Actions).
+#
+# Alur: typecheck + test → build image Docker → push ke Artifact Registry
+#       → deploy ke Cloud Run.
+#
+# Cara menjalankan:
+#   A) Manual dari komputer (gcloud sudah login):
+#        bash scripts/deploy-cloudrun.sh        (mengirim file ini)
+#      atau langsung:
+#        gcloud builds submit --config cloudbuild.yaml \
+#          --substitutions=_NEXT_PUBLIC_FIREBASE_API_KEY=...,_NEXT_PUBLIC_FIREBASE_APP_ID=...
+#   B) Otomatis tiap push ke main: Cloud Console → Cloud Build → Triggers →
+#      Create trigger → hubungkan repo GitHub yayanbachtiar/store-asinan,
+#      event "Push to branch" ^main$, configuration = cloudbuild.yaml,
+#      lalu isi substitution variables NEXT_PUBLIC_* di trigger tsb.
+#
+# Persiapan SEKALI di project GCP/Firebase (selain langkah README umum):
+#   1. Buat repository Artifact Registry (tempat image):
+#        gcloud artifacts repositories create kas-asinan \
+#          --repository-format=docker --location=asia-southeast2
+#   2. Buat secret sesi di Secret Manager bernama kas-asinan-session-secret
+#      (atau ganti _SESSION_SECRET_NAME) + beri roles/secretmanager.secretAccessor
+#      ke service account runtime Cloud Run.
+#   3. Service account Cloud Build butuh peran: Artifact Registry Writer,
+#      Cloud Run Admin, Service Account User (untuk service account runtime).
+#      Yang membaca secret adalah Cloud Run saat runtime, bukan build ini —
+#      build hanya merujuk namanya saat deploy.
+#
+# NEXT_PUBLIC_FIREBASE_PROJECT_ID tidak perlu diisi: project client Firebase
+# = project GCP ini ($PROJECT_ID). Nilai NEXT_PUBLIC_* lain boleh kosong —
+# aplikasi tetap ter-deploy, hanya tombol login tampil nonaktif.
+# ============================================================================
+
 substitutions:
+  _REGION: asia-southeast2
+  _SERVICE: kas-asinan
+  _AR_REPO: kas-asinan
+  _SESSION_SECRET_NAME: kas-asinan-session-secret
   _NEXT_PUBLIC_FIREBASE_API_KEY: ""
   _NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ""
-  _NEXT_PUBLIC_FIREBASE_PROJECT_ID: ""
   _NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ""
   _NEXT_PUBLIC_FIREBASE_APP_ID: ""
+
 steps:
-  - name: gcr.io/cloud-builders/docker
+  # 1) Verifikasi: typecheck + seluruh test (pengganti CI GitHub Actions).
+  - id: test
+    name: node:22-alpine
+    entrypoint: sh
+    args:
+      - -c
+      - corepack enable && pnpm install --frozen-lockfile && pnpm exec tsc --noEmit && pnpm test
+
+  # 2) Build image, tag = commit (BUILD_ID — selalu tersedia, baik dari trigger Git maupun builds submit manual) (untuk deploy & rollback yang pasti)
+  #    + latest (untuk referensi manusia).
+  - id: build
+    name: gcr.io/cloud-builders/docker
     args:
       - build
       - --build-arg=NEXT_PUBLIC_FIREBASE_API_KEY=$_NEXT_PUBLIC_FIREBASE_API_KEY
       - --build-arg=NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=$_NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-      - --build-arg=NEXT_PUBLIC_FIREBASE_PROJECT_ID=$_NEXT_PUBLIC_FIREBASE_PROJECT_ID
+      - --build-arg=NEXT_PUBLIC_FIREBASE_PROJECT_ID=$PROJECT_ID
       - --build-arg=NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=$_NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
       - --build-arg=NEXT_PUBLIC_FIREBASE_APP_ID=$_NEXT_PUBLIC_FIREBASE_APP_ID
       - -t
-      - gcr.io/$PROJECT_ID/kas-asinan:$SHORT_SHA
+      - $_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPO/$_SERVICE:$BUILD_ID
       - -t
-      - gcr.io/$PROJECT_ID/kas-asinan:latest
+      - $_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPO/$_SERVICE:latest
       - .
-images:
-  - gcr.io/$PROJECT_ID/kas-asinan:$SHORT_SHA
-  - gcr.io/$PROJECT_ID/kas-asinan:latest
+    waitFor: [test]
+
+  # 3) Push kedua tag ke Artifact Registry (eksplisit, supaya langkah deploy
+  #    sesudahnya dijamin menemukan image-nya).
+  - id: push-sha
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - $_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPO/$_SERVICE:$BUILD_ID
+    waitFor: [build]
+  - id: push-latest
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - $_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPO/$_SERVICE:latest
+    waitFor: [build]
+
+  # 4) Deploy ke Cloud Run dari tag build yang baru saja dibangun.
+  #    --allow-unauthenticated hanya membuka akses tingkat Cloud Run;
+  #    otorisasi ditangani aplikasi (login Firebase + whitelist members).
+  #    min-instances 0 = scale-to-zero; SESSION_SECRET dari Secret Manager.
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - $_SERVICE
+      - --image=$_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPO/$_SERVICE:$BUILD_ID
+      - --region=$_REGION
+      - --platform=managed
+      - --allow-unauthenticated
+      - --min-instances=0
+      - --max-instances=3
+      - --set-env-vars=FIREBASE_PROJECT_ID=$PROJECT_ID
+      - --set-secrets=SESSION_SECRET=$_SESSION_SECRET_NAME:latest
+    waitFor: [push-sha]
+
+timeout: 1200s
