@@ -106,3 +106,12 @@ steps:
     waitFor: [push-sha]
 
 timeout: 1200s
+
+options:
+  # Wajib bila build berjalan dengan service account (trigger / SA khusus):
+  # tanpa ini Cloud Build menolak build — "if 'build.service_account' is
+  # specified, the build must either ... specify logs_bucket ... or use
+  # CLOUD_LOGGING_ONLY / NONE logging options".
+  # CLOUD_LOGGING_ONLY = log build hanya ke Cloud Logging, tanpa bucket GCS.
+  # Alternatif: hapus baris ini dan isi logs_bucket dengan bucket milikmu.
+  logging: CLOUD_LOGGING_ONLY
