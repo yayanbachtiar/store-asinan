@@ -20,7 +20,8 @@ initializeApp(
     ? { projectId: projectId ?? "demo-kas-asinan" }
     : { projectId, credential: applicationDefault() },
 );
-const db = getFirestore();
+const databaseId = process.env.FIRESTORE_DATABASE_ID;
+const db = databaseId && databaseId !== "(default)" ? getFirestore(databaseId) : getFirestore();
 
 const products = [
   ["Cup Kecil", 10000],

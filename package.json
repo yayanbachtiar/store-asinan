@@ -9,7 +9,8 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "seed:products": "node scripts/seed-products.mjs"
+    "seed:products": "node scripts/seed-products.mjs",
+    "seed:admin": "node scripts/seed-admin.mjs"
   },
   "dependencies": {
     "firebase": "^13.2.0",

@@ -1,7 +1,7 @@
 import { applicationDefault, getApps, initializeApp, type App } from "firebase-admin/app";
 import { getAuth, type Auth } from "firebase-admin/auth";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
-import { firebaseProjectId } from "./env";
+import { firebaseProjectId, firestoreDatabaseId } from "./env";
 
 /**
  * Akses Firestore lewat Firebase Admin SDK — HANYA di server.
@@ -39,7 +39,10 @@ function initAdmin(): AdminServices | null {
           ? { projectId } // Emulator tidak butuh kredensial.
           : { projectId, credential: applicationDefault() },
       );
-    cached = { app, firestore: getFirestore(app), auth: getAuth(app) };
+    // Named database bila FIRESTORE_DATABASE_ID diisi (project ini memakai
+    // database "asinan-store", BUKAN "(default)").
+    const firestore = firestoreDatabaseId ? getFirestore(app, firestoreDatabaseId) : getFirestore(app);
+    cached = { app, firestore, auth: getAuth(app) };
   } catch {
     cached = null;
   }

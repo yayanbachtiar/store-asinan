@@ -67,8 +67,19 @@ sesi HMAC berisi member id.
    dan beri akses ke service account Cloud Run
    (`roles/secretmanager.secretAccessor` untuk
    `<project-number>-compute@developer.gserviceaccount.com`).
-6. **Buat anggota pertama (bendahara)** langsung di Firestore Console:
-   collection `members`, satu dokumen (Document ID: auto), field persis:
+6. **Buat anggota pertama (bendahara/admin awal)** — aplikasi project ini
+   membaca database Firestore bernama **`asinan-store`** (named database,
+   bukan `(default)`; diatur lewat env `FIRESTORE_DATABASE_ID`, default
+   substitution Cloud Build juga `asinan-store`). Dua cara:
+   - **Script (disarankan)** dari komputer lokal setelah
+     `gcloud auth application-default login`:
+     ```bash
+     FIREBASE_PROJECT_ID=gamya-tech FIRESTORE_DATABASE_ID=asinan-store \
+     ADMIN_EMAIL=<email-google-admin> ADMIN_NAME="<nama>" pnpm seed:admin
+     ```
+     Idempoten — email yang sudah ada dilewati. Peran default `bendahara`.
+   - **Manual di Firestore Console** pada database `asinan-store`:
+     collection `members`, satu dokumen (Document ID: auto), field persis:
    | field | type | nilai contoh |
    |---|---|---|
    | `name` | string | `Wening` |

@@ -11,6 +11,8 @@ const envSchema = z.object({
   NEXT_PUBLIC_APP_URL: optionalText,
   // Firebase — server (Admin SDK)
   FIREBASE_PROJECT_ID: optionalText,
+  // Named database Firestore (kosong / "(default)" = database default project).
+  FIRESTORE_DATABASE_ID: optionalText,
   // Firebase — client (ditanam saat build lewat NEXT_PUBLIC_*)
   NEXT_PUBLIC_FIREBASE_API_KEY: optionalText,
   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: optionalText,
@@ -24,6 +26,7 @@ export const env = envSchema.parse({
   ["SESSION_" + "SECRET"]: process.env["SESSION_" + "SECRET"],
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
+  FIRESTORE_DATABASE_ID: process.env.FIRESTORE_DATABASE_ID,
   NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   NEXT_PUBLIC_FIREBASE_PROJECT_ID: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -34,6 +37,16 @@ export const env = envSchema.parse({
 
 /** Project ID Firebase: env server didahulukan, fallback ke env publik. */
 export const firebaseProjectId = env.FIREBASE_PROJECT_ID ?? env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+
+/**
+ * ID database Firestore yang dipakai aplikasi. Project ini memakai NAMED
+ * database (bukan "(default)") — nilainya dari env FIRESTORE_DATABASE_ID.
+ * Kosong atau "(default)" → database default project.
+ */
+export const firestoreDatabaseId =
+  env.FIRESTORE_DATABASE_ID && env.FIRESTORE_DATABASE_ID !== "(default)"
+    ? env.FIRESTORE_DATABASE_ID
+    : undefined;
 
 /**
  * Konfigurasi Firebase Web SDK (untuk Firebase Authentication di browser).
