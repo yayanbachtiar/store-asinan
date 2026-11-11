@@ -84,7 +84,7 @@ export async function generateStoreContextPrompt(): Promise<string> {
   try {
     const { listBatches, getBatchDetail } = await import("./data");
     const batches = await listBatches();
-    const activeBatchMeta = batches.find((b) => b.status === "active") || batches[0];
+    const activeBatchMeta = batches.find((b) => b.status === "aktif") || batches[0];
 
     if (!activeBatchMeta) {
       return formatStoreContext(null, []);
@@ -113,10 +113,10 @@ export async function generateStoreContextPrompt(): Promise<string> {
       date: detail.batch.date,
       title: detail.batch.title,
       initialCapital: detail.batch.initialCapital,
-      omset: detail.finance.omset,
-      expense: detail.finance.expense,
-      unpaidAmount: detail.finance.unpaidAmount,
-      unpaidCount: detail.finance.unpaidCount,
+      omset: detail.finance.omzet,
+      expense: detail.finance.totalExpenses,
+      unpaidAmount: detail.finance.totalReceivable,
+      unpaidCount: unpaidOrders.length,
       cupsSold,
     };
 
