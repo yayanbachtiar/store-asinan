@@ -21,22 +21,36 @@ export default async function HomePage() {
   let content: React.ReactNode;
   try {
     const allBatches = await listBatches();
-    const active = allBatches.find((b) => b.status === "aktif") ?? allBatches[0];
+    const active = allBatches.find((b) => b.status === "aktif");
 
     if (!active) {
+      const hasClosedBatches = allBatches.length > 0;
       return (
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs text-center">
-          <p className="text-sm font-semibold text-slate-800">Belum ada batch produksi.</p>
-          <p className="mt-1 text-xs text-slate-500">
-            Mulai dengan membuat batch produksi baru untuk mencatat omset dan pengeluaran.
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xs text-center max-w-md mx-auto my-8">
+          <span className="text-3xl">📦</span>
+          <p className="mt-3 text-base font-bold text-slate-800">
+            {hasClosedBatches ? "Tidak Ada Batch Produksi Aktif" : "Belum Ada Batch Produksi"}
           </p>
-          <div className="mt-4">
+          <p className="mt-1.5 text-xs text-slate-500">
+            {hasClosedBatches
+              ? "Semua batch sebelumnya sudah ditutup. Buka batch baru untuk mulai mencatat penjualan dan pengeluaran."
+              : "Mulai pembukuan dengan membuka batch produksi perdana."}
+          </p>
+          <div className="mt-5 flex justify-center gap-3">
             <Link
               href="/batch"
-              className="inline-flex items-center rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 transition-colors"
+              className="inline-flex items-center rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 transition-colors"
             >
               + Buka Batch Baru
             </Link>
+            {hasClosedBatches && (
+              <Link
+                href={`/batch/${allBatches[0].id}`}
+                className="inline-flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+              >
+                Lihat Batch Terakhir
+              </Link>
+            )}
           </div>
         </div>
       );

@@ -41,6 +41,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <span className="text-xs text-slate-500 hidden sm:inline">
             {member.name}
           </span>
+          <Link
+            href="/pengaturan"
+            className="text-xs font-medium text-slate-500 hover:text-emerald-700 sm:hidden"
+            title="Pengaturan"
+          >
+            ⚙️
+          </Link>
           <form action="/api/auth/logout" method="post">
             <button
               type="submit"
