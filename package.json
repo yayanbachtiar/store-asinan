@@ -5,10 +5,11 @@
   "packageManager": "pnpm@10.20.0",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "bot:telegram": "node scripts/telegram-bot.mjs",
     "seed:products": "node scripts/seed-products.mjs",
     "seed:admin": "node scripts/seed-admin.mjs"
   },
