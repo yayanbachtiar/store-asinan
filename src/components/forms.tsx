@@ -772,6 +772,165 @@ export function CustomerEdit({
 
 /* ---------------- Pengaturan: anggota & produk ---------------- */
 
+export function TelegramSelfLinkCard({
+  initialTelegramId,
+  memberName,
+}: {
+  initialTelegramId: string | null;
+  memberName: string;
+}) {
+  const router = useRouter();
+  const [telegramId, setTelegramId] = useState(initialTelegramId || "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const isConnected = Boolean(initialTelegramId);
+
+  const handleSave = async (val: string | null) => {
+    setBusy(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch("/api/members/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ telegramId: val }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setError(data?.error || `Gagal menyimpan (${res.status})`);
+      } else {
+        setSuccess(
+          val
+            ? `Berhasil menghubungkan Telegram: ${data.telegramId}`
+            : "Hubungan akun Telegram berhasil diputuskan",
+        );
+        router.refresh();
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan jaringan");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className={card}>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-pink-100/80 pb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">💬</span>
+          <div>
+            <h3 className="font-extrabold text-sm text-[#2D1B2D]">Akun Telegram Saya</h3>
+            <p className="text-[11px] text-[#7A6273]">
+              Profil tim: <b className="text-[#2D1B2D]">{memberName}</b>
+            </p>
+          </div>
+        </div>
+        <div>
+          {isConnected ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 px-3 py-1 text-xs font-bold text-emerald-700">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              Terhubung: {initialTelegramId?.startsWith("@") ? initialTelegramId : `@${initialTelegramId}`}
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-100 border border-stone-200 px-3 py-1 text-xs font-semibold text-stone-600">
+              <span className="h-2 w-2 rounded-full bg-stone-400" />
+              Belum Terhubung
+            </span>
+          )}
+        </div>
+      </div>
+
+      <p className="text-xs text-[#7A6273] mb-4">
+        Hubungkan akun Telegram pribadi Anda agar Bot Asinan AI mengenali Anda secara otomatis dan memberikan akses konsultasi toko, cek omset, serta daftar piutang.
+      </p>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void handleSave(telegramId);
+        }}
+        className="space-y-4"
+      >
+        <div className="max-w-md">
+          <label>ID Angka Telegram / Username</label>
+          <div className="flex gap-2 mt-1">
+            <input
+              value={telegramId}
+              onChange={(e) => setTelegramId(e.target.value)}
+              placeholder="Contoh: 123456789 atau username"
+              className="font-mono text-xs"
+            />
+            <button
+              type="submit"
+              disabled={busy}
+              className={`${btn} shrink-0 px-4 py-2`}
+            >
+              {busy ? "Menyimpan..." : "Simpan ID"}
+            </button>
+            {isConnected && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  setTelegramId("");
+                  void handleSave(null);
+                }}
+                className="rounded-full border border-rose-200 bg-white px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 transition-all cursor-pointer shrink-0"
+              >
+                Putuskan
+              </button>
+            )}
+          </div>
+        </div>
+
+        {success && (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-3 text-xs font-semibold text-emerald-800">
+            ✅ {success}
+          </div>
+        )}
+        <ErrorText error={error} />
+      </form>
+
+      {/* Tutorial Card: Cara Mendapatkan User ID Telegram */}
+      <div className="mt-5 rounded-2xl border border-pink-100 bg-gradient-to-br from-pink-50/60 to-purple-50/40 p-4 text-xs text-[#2D1B2D]">
+        <div className="font-extrabold text-pink-900 flex items-center gap-1.5 mb-2">
+          <span>💡</span>
+          <span>Cara Mengetahui User ID Telegram Anda:</span>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 mt-2">
+          <div className="rounded-xl border border-pink-200/60 bg-white/90 p-3 shadow-2xs">
+            <div className="font-bold text-pink-800 mb-1 flex items-center gap-1">
+              <span>🍌</span>
+              <span>Metode 1 (Paling Cepat via Bot Toko)</span>
+            </div>
+            <ol className="list-decimal list-inside space-y-1 text-[11px] text-[#7A6273]">
+              <li>Buka chat ke Bot Telegram Toko kami.</li>
+              <li>Kirim pesan apa saja atau <code className="bg-pink-100 text-pink-900 px-1 py-0.5 rounded font-mono">/start</code>.</li>
+              <li>Bot otomatis membalas dengan menampilkan <b>User ID Telegram</b> Anda.</li>
+              <li>Salin angka tersebut dan tempel di form di atas.</li>
+            </ol>
+          </div>
+
+          <div className="rounded-xl border border-purple-200/60 bg-white/90 p-3 shadow-2xs">
+            <div className="font-bold text-purple-800 mb-1 flex items-center gap-1">
+              <span>🤖</span>
+              <span>Metode 2 (Via @userinfobot)</span>
+            </div>
+            <ol className="list-decimal list-inside space-y-1 text-[11px] text-[#7A6273]">
+              <li>Di Telegram, cari bot resmi <code className="bg-purple-100 text-purple-900 px-1 py-0.5 rounded font-mono">@userinfobot</code>.</li>
+              <li>Klik <b>Start</b> atau kirim salam.</li>
+              <li>Salin angka pada baris <code className="bg-purple-100 text-purple-900 px-1 py-0.5 rounded font-mono">Id: 123456789</code>.</li>
+              <li>Tempelkan angka tersebut ke form di atas lalu klik Simpan.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function MemberForm() {
   const { error, busy, run } = useSubmit();
   const [name, setName] = useState("");

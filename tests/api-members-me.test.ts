@@ -14,28 +14,29 @@ vi.mock("@/lib/repo/members", () => ({
 
 import { requireApiMember } from "@/lib/auth";
 import { getMember, updateMember, findMemberByTelegramId } from "@/lib/repo/members";
-import { GET, PATCH, cleanTelegramHandle } from "@/app/api/members/me/route";
+import { cleanTelegramInput } from "@/lib/telegram-format";
+import { GET, PATCH } from "@/app/api/members/me/route";
 
 describe("API /api/members/me", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe("cleanTelegramHandle", () => {
+  describe("cleanTelegramInput", () => {
     it("strips leading @ symbol", () => {
-      expect(cleanTelegramHandle("@husein")).toBe("husein");
-      expect(cleanTelegramHandle("@@husein")).toBe("@husein");
+      expect(cleanTelegramInput("@husein")).toBe("husein");
+      expect(cleanTelegramInput("@@husein")).toBe("@husein");
     });
 
     it("returns null for empty or whitespace-only inputs", () => {
-      expect(cleanTelegramHandle("")).toBeNull();
-      expect(cleanTelegramHandle("   ")).toBeNull();
-      expect(cleanTelegramHandle(null)).toBeNull();
-      expect(cleanTelegramHandle(undefined)).toBeNull();
+      expect(cleanTelegramInput("")).toBeNull();
+      expect(cleanTelegramInput("   ")).toBeNull();
+      expect(cleanTelegramInput(null)).toBeNull();
+      expect(cleanTelegramInput(undefined)).toBeNull();
     });
 
     it("preserves numeric ID strings", () => {
-      expect(cleanTelegramHandle("123456789")).toBe("123456789");
+      expect(cleanTelegramInput("123456789")).toBe("123456789");
     });
   });
 

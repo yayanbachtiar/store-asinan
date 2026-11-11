@@ -6,14 +6,7 @@ import {
   getMember,
   updateMember,
 } from "@/lib/repo/members";
-
-export const cleanTelegramHandle = (input: string | null | undefined): string | null => {
-  if (!input) return null;
-  const trimmed = input.trim();
-  if (!trimmed) return null;
-  const stripped = trimmed.startsWith("@") ? trimmed.slice(1).trim() : trimmed;
-  return stripped.length > 0 ? stripped : null;
-};
+import { cleanTelegramInput } from "@/lib/telegram-format";
 
 const patchSchema = z.object({
   telegramId: z.string().trim().max(64).nullable().optional(),
@@ -43,7 +36,7 @@ export async function PATCH(request: Request) {
   const body = parseBody(patchSchema, rawBody);
   if (!body) return badRequest("Data tidak valid");
 
-  const cleaned = cleanTelegramHandle(body.telegramId);
+  const cleaned = cleanTelegramInput(body.telegramId);
 
   if (cleaned) {
     const existing = await findMemberByTelegramId(cleaned);

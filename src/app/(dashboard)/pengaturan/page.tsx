@@ -1,11 +1,19 @@
-import { MemberForm, PatchButton, ProductForm, ProductPriceEdit } from "@/components/forms";
+import {
+  MemberForm,
+  PatchButton,
+  ProductForm,
+  ProductPriceEdit,
+  TelegramSelfLinkCard,
+} from "@/components/forms";
 import { DbUnavailable, SectionTitle } from "@/components/ui";
+import { getCurrentMember } from "@/lib/auth";
 import { listMembers, listProducts } from "@/lib/data";
 import { formatRp } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
 export default async function PengaturanPage() {
+  const currentMember = await getCurrentMember();
   let memberList: Awaited<ReturnType<typeof listMembers>> | null = null;
   let productList: Awaited<ReturnType<typeof listProducts>> | null = null;
   try {
@@ -16,6 +24,8 @@ export default async function PengaturanPage() {
   }
   if (!memberList || !productList) return <DbUnavailable />;
 
+  const myRecord = currentMember ? memberList.find((m) => m.id === currentMember.id) : null;
+
   return (
     <div className="space-y-6">
       <div>
@@ -24,8 +34,17 @@ export default async function PengaturanPage() {
           <span>Pengaturan Sistem</span>
         </h1>
         <p className="text-xs text-[#7A6273] mt-0.5">
-          Kelola hak akses anggota tim, peran bendahara, dan katalog produk asinan beserta harga jualnya.
+          Kelola hak akses anggota tim, peran bendahara, integrasi bot Telegram, dan katalog produk asinan beserta harga jualnya.
         </p>
+      </div>
+
+      {/* Akun Telegram Saya */}
+      <div>
+        <SectionTitle>Integrasi Bot Telegram AI</SectionTitle>
+        <TelegramSelfLinkCard
+          initialTelegramId={myRecord?.telegramId || null}
+          memberName={currentMember?.name || "Anggota Tim"}
+        />
       </div>
 
       {/* Anggota Tim */}
