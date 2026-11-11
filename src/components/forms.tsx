@@ -39,12 +39,18 @@ function useSubmit() {
 }
 
 const btn =
-  "rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50";
-const card = "rounded-2xl border border-amber-200 bg-white p-4 shadow-sm";
+  "inline-flex items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:shadow-sm active:scale-95 disabled:opacity-50 transition-all cursor-pointer";
+const card =
+  "rounded-3xl border border-pink-200/90 bg-white p-5 sm:p-6 shadow-xs transition-all hover:border-pink-300";
 
 export function ErrorText({ error }: { error: string | null }) {
   if (!error) return null;
-  return <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>;
+  return (
+    <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-rose-50 border border-rose-200 px-3.5 py-1 text-xs font-semibold text-rose-700">
+      <span>⚠️</span>
+      <span>{error}</span>
+    </div>
+  );
 }
 
 /* ---------------- Tombol generik ---------------- */
@@ -58,9 +64,10 @@ export function DeleteButton({ path, label = "Hapus" }: { path: string; label?: 
       onClick={() => {
         if (confirm("Hapus data ini?")) void run(() => api(path, "DELETE"));
       }}
-      className="text-xs font-medium text-red-600 underline disabled:opacity-50"
+      className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
     >
-      {label}
+      <span>🗑️</span>
+      <span>{label}</span>
     </button>
   );
 }
@@ -83,7 +90,10 @@ export function PatchButton({
         type="button"
         disabled={busy}
         onClick={() => void run(() => api(path, "PATCH", body))}
-        className={className ?? "text-xs font-medium text-amber-700 underline disabled:opacity-50"}
+        className={
+          className ??
+          "inline-flex items-center gap-1 rounded-full bg-pink-50 border border-pink-200 px-3 py-1 text-xs font-bold text-pink-700 hover:bg-pink-100 hover:border-pink-300 active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
+        }
       >
         {label}
       </button>
@@ -115,24 +125,36 @@ export function BatchForm() {
         );
       }}
     >
-      <h3 className="mb-3 font-semibold">Buat Batch Baru</h3>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="mb-4 flex items-center justify-between border-b border-pink-100/80 pb-3">
+        <h3 className="font-extrabold text-sm text-[#2D1B2D] flex items-center gap-2">
+          <span>🧺</span>
+          <span>Buka Batch Produksi Baru</span>
+        </h3>
+        <span className="text-[11px] font-bold text-pink-600 bg-pink-50 border border-pink-200/80 rounded-full px-2.5 py-0.5">
+          Sesi Baru
+        </span>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3">
         <div>
-          <label>Tanggal produksi</label>
+          <label>Tanggal Produksi</label>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
         </div>
         <div>
-          <label>Judul (opsional)</label>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="mis. Batch Senin" />
+          <label>Nama / Judul Batch (opsional)</label>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="mis. Batch Senin Manis" />
         </div>
         <div>
-          <label>Modal awal (Rp)</label>
+          <label>Modal Awal (Rp)</label>
           <input type="number" min="0" value={capital} onChange={(e) => setCapital(e.target.value)} />
         </div>
       </div>
-      <button className={`${btn} mt-3`} disabled={busy}>
-        + Buat Batch
-      </button>
+
+      <div className="mt-4 pt-3 border-t border-pink-50 flex items-center justify-end">
+        <button className={btn} disabled={busy}>
+          ✨ + Buat Batch
+        </button>
+      </div>
       <ErrorText error={error} />
     </form>
   );
@@ -165,18 +187,27 @@ export function ExpenseForm({ batchId, members }: { batchId: string; members: Me
         );
       }}
     >
-      <h3 className="mb-3 font-semibold">Tambah Pengeluaran</h3>
-      <div className="grid gap-3 sm:grid-cols-4">
-        <div className="sm:col-span-2">
-          <label>Keterangan</label>
-          <input value={description} onChange={(e) => setDescription(e.target.value)} required placeholder="mis. Gula dan lombok" />
+      <div className="mb-4 flex items-center justify-between border-b border-pink-100/80 pb-3">
+        <h3 className="font-extrabold text-sm text-[#2D1B2D] flex items-center gap-2">
+          <span>🧾</span>
+          <span>Catat Belanja Bahan (HPP)</span>
+        </h3>
+        <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 rounded-full px-2.5 py-0.5">
+          Biaya Modal
+        </span>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-12">
+        <div className="sm:col-span-5">
+          <label>Keterangan Belanja</label>
+          <input value={description} onChange={(e) => setDescription(e.target.value)} required placeholder="mis. Gula pasir, cabe rawit, cup 300ml" />
         </div>
-        <div>
-          <label>Jumlah (Rp)</label>
-          <input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+        <div className="sm:col-span-3">
+          <label>Jumlah Biaya (Rp)</label>
+          <input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} required placeholder="0" />
         </div>
-        <div>
-          <label>Dibayar oleh</label>
+        <div className="sm:col-span-4">
+          <label>Dibayar Oleh</label>
           <select value={paidBy} onChange={(e) => setPaidBy(e.target.value)}>
             {members.map((m) => (
               <option key={m.id} value={m.id}>
@@ -186,9 +217,12 @@ export function ExpenseForm({ batchId, members }: { batchId: string; members: Me
           </select>
         </div>
       </div>
-      <button className={`${btn} mt-3`} disabled={busy}>
-        + Tambah
-      </button>
+
+      <div className="mt-4 pt-3 border-t border-pink-50 flex items-center justify-end">
+        <button className={btn} disabled={busy}>
+          + Tambah Pengeluaran
+        </button>
+      </div>
       <ErrorText error={error} />
     </form>
   );
@@ -212,6 +246,7 @@ export function OrderForm({
     { productId: products[0]?.id ?? "", qty: 1 },
   ]);
   const activeProducts = products.filter((p) => p.isActive !== false);
+
   return (
     <form
       className={card}
@@ -227,8 +262,17 @@ export function OrderForm({
         );
       }}
     >
-      <h3 className="mb-3 font-semibold">Tambah Order</h3>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="mb-4 flex items-center justify-between border-b border-pink-100/80 pb-3">
+        <h3 className="font-extrabold text-sm text-[#2D1B2D] flex items-center gap-2">
+          <span>🛍️</span>
+          <span>Tambah Order Baru</span>
+        </h3>
+        <span className="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200/80 rounded-full px-2.5 py-0.5">
+          Penjualan
+        </span>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label>Pelanggan</label>
           <select value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
@@ -240,19 +284,32 @@ export function OrderForm({
           </select>
         </div>
         <div>
-          <label>Sumber order</label>
+          <label>Sumber Order</label>
           <select value={source} onChange={(e) => setSource(e.target.value)}>
-            <option value="wa">WhatsApp</option>
-            <option value="langsung">Langsung</option>
-            <option value="puskesmas">Teman Puskesmas</option>
+            <option value="wa">💬 WhatsApp</option>
+            <option value="langsung">🏪 Langsung / Stand</option>
+            <option value="puskesmas">🏥 Teman Puskesmas</option>
           </select>
         </div>
       </div>
-      <div className="mt-3 space-y-2">
+
+      <div className="mt-4 rounded-2xl bg-pink-50/40 border border-pink-100 p-3.5 space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-bold text-[#7A6273] mb-0">Rincian Item Cup</label>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 rounded-full bg-white border border-pink-200 px-3 py-1 text-xs font-bold text-pink-700 hover:bg-pink-50 transition-all cursor-pointer"
+            onClick={() =>
+              setItems([...items, { productId: activeProducts[0]?.id ?? "", qty: 1 }])
+            }
+          >
+            + Tambah Varian
+          </button>
+        </div>
+
         {items.map((item, idx) => (
-          <div key={idx} className="flex items-end gap-2">
+          <div key={idx} className="flex items-center gap-2.5">
             <div className="flex-1">
-              <label>Produk</label>
               <select
                 value={item.productId}
                 onChange={(e) => {
@@ -268,8 +325,7 @@ export function OrderForm({
                 ))}
               </select>
             </div>
-            <div className="w-24">
-              <label>Qty</label>
+            <div className="w-28 shrink-0">
               <input
                 type="number"
                 min="1"
@@ -279,37 +335,37 @@ export function OrderForm({
                   next[idx] = { ...next[idx], qty: Number(e.target.value) };
                   setItems(next);
                 }}
+                placeholder="Qty"
               />
             </div>
             {items.length > 1 && (
               <button
                 type="button"
-                className="pb-2 text-xs text-red-600 underline"
+                className="rounded-full p-2 text-rose-500 hover:bg-rose-50 transition-colors cursor-pointer"
                 onClick={() => setItems(items.filter((_, i) => i !== idx))}
+                title="Hapus baris"
               >
-                Hapus
+                ✕
               </button>
             )}
           </div>
         ))}
-        <button
-          type="button"
-          className="text-xs font-medium text-amber-700 underline"
-          onClick={() =>
-            setItems([...items, { productId: activeProducts[0]?.id ?? "", qty: 1 }])
-          }
-        >
-          + Item lain
+      </div>
+
+      <div className="mt-4 pt-3 border-t border-pink-50 flex items-center justify-between flex-wrap gap-2">
+        {customers.length === 0 ? (
+          <p className="text-xs text-amber-700">
+            ⚠️ Belum ada pelanggan — tambahkan dulu di tab Pelanggan ya.
+          </p>
+        ) : (
+          <span className="text-xs text-[#7A6273]">
+            {items.reduce((s, i) => s + (Number(i.qty) || 0), 0)} cup dipilih
+          </span>
+        )}
+        <button className={btn} disabled={busy || customers.length === 0}>
+          + Simpan Order
         </button>
       </div>
-      <button className={`${btn} mt-3`} disabled={busy || customers.length === 0}>
-        + Tambah Order
-      </button>
-      {customers.length === 0 && (
-        <p className="mt-2 text-xs text-stone-500">
-          Belum ada pelanggan — tambahkan dulu di halaman Pelanggan.
-        </p>
-      )}
       <ErrorText error={error} />
     </form>
   );
@@ -331,20 +387,23 @@ export function PaymentForm({
   const [amount, setAmount] = useState(String(defaultAmount));
   const [method, setMethod] = useState("cash");
   const [receivedBy, setReceivedBy] = useState(members[0]?.id ?? "");
+
   if (!open) {
     return (
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-xs font-semibold text-emerald-700 underline"
+        className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-bold text-emerald-700 hover:bg-emerald-100 transition-all cursor-pointer"
       >
-        Tandai sudah bayar
+        <span>💸</span>
+        <span>Tandai sudah bayar</span>
       </button>
     );
   }
+
   return (
     <form
-      className="mt-2 rounded-lg bg-emerald-50 p-3"
+      className="mt-2.5 rounded-2xl border border-emerald-200/80 bg-emerald-50/60 p-4 shadow-2xs space-y-3"
       onSubmit={(e) => {
         e.preventDefault();
         void run(() =>
@@ -357,20 +416,20 @@ export function PaymentForm({
         );
       }}
     >
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3">
         <div>
-          <label>Jumlah (Rp)</label>
+          <label>Jumlah Pelunasan (Rp)</label>
           <input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} required />
         </div>
         <div>
-          <label>Metode</label>
+          <label>Metode Pembayaran</label>
           <select value={method} onChange={(e) => setMethod(e.target.value)}>
-            <option value="cash">Tunai</option>
-            <option value="transfer">Transfer</option>
+            <option value="cash">💵 Tunai / Cash</option>
+            <option value="transfer">📱 QRIS / Transfer</option>
           </select>
         </div>
         <div>
-          <label>Diterima oleh</label>
+          <label>Uang Diterima Oleh</label>
           <select value={receivedBy} onChange={(e) => setReceivedBy(e.target.value)}>
             {members.map((m) => (
               <option key={m.id} value={m.id}>
@@ -380,12 +439,19 @@ export function PaymentForm({
           </select>
         </div>
       </div>
-      <div className="mt-2 flex gap-2">
-        <button className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50" disabled={busy}>
-          Simpan Pembayaran
-        </button>
-        <button type="button" className="text-xs underline" onClick={() => setOpen(false)}>
+      <div className="flex items-center justify-end gap-2 pt-2 border-t border-emerald-100">
+        <button
+          type="button"
+          className="rounded-full px-3 py-1.5 text-xs text-[#7A6273] hover:underline"
+          onClick={() => setOpen(false)}
+        >
           Batal
+        </button>
+        <button
+          className="rounded-full bg-emerald-600 hover:bg-emerald-700 px-4 py-1.5 text-xs font-bold text-white shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+          disabled={busy}
+        >
+          Simpan Pelunasan
         </button>
       </div>
       <ErrorText error={error} />
@@ -410,10 +476,19 @@ export function SettlementForm({ members }: { members: MemberOpt[] }) {
         );
       }}
     >
-      <h3 className="mb-3 font-semibold">Catat Setoran ke Bendahara</h3>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="mb-4 flex items-center justify-between border-b border-pink-100/80 pb-3">
+        <h3 className="font-extrabold text-sm text-[#2D1B2D] flex items-center gap-2">
+          <span>💰</span>
+          <span>Catat Setoran Uang ke Bendahara</span>
+        </h3>
+        <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 rounded-full px-2.5 py-0.5">
+          Kas Masuk
+        </span>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label>Yang menyetor</label>
+          <label>Anggota yang Menyetor</label>
           <select value={memberId} onChange={(e) => setMemberId(e.target.value)}>
             {members.map((m) => (
               <option key={m.id} value={m.id}>
@@ -423,18 +498,19 @@ export function SettlementForm({ members }: { members: MemberOpt[] }) {
           </select>
         </div>
         <div>
-          <label>Jumlah (Rp)</label>
-          <input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} required />
-        </div>
-        <div className="flex items-end">
-          <button className={btn} disabled={busy}>
-            + Catat Setoran
-          </button>
+          <label>Jumlah Uang Setoran (Rp)</label>
+          <input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} required placeholder="mis. 150000" />
         </div>
       </div>
-      <p className="mt-2 text-xs text-stone-500">
-        Setoran berstatus <b>menunggu</b> sampai bendahara mengonfirmasi diterima.
-      </p>
+
+      <div className="mt-4 pt-3 border-t border-pink-50 flex items-center justify-between">
+        <p className="text-[11px] text-[#7A6273]">
+          💡 Status langsung <b>menunggu</b> konfirmasi bendahara.
+        </p>
+        <button className={btn} disabled={busy}>
+          + Kirim Setoran
+        </button>
+      </div>
       <ErrorText error={error} />
     </form>
   );
@@ -462,10 +538,19 @@ export function AdvanceForm({ batchId, members }: { batchId: string; members: Me
         );
       }}
     >
-      <h3 className="mb-3 font-semibold">Catat Talangan Modal</h3>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="mb-4 flex items-center justify-between border-b border-pink-100/80 pb-3">
+        <h3 className="font-extrabold text-sm text-[#2D1B2D] flex items-center gap-2">
+          <span>🤝</span>
+          <span>Catat Talangan Modal Pribadi</span>
+        </h3>
+        <span className="text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-200/80 rounded-full px-2.5 py-0.5">
+          Talangan
+        </span>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label>Yang menalangi</label>
+          <label>Anggota yang Menalangi</label>
           <select value={memberId} onChange={(e) => setMemberId(e.target.value)}>
             {members.map((m) => (
               <option key={m.id} value={m.id}>
@@ -475,14 +560,15 @@ export function AdvanceForm({ batchId, members }: { batchId: string; members: Me
           </select>
         </div>
         <div>
-          <label>Jumlah (Rp)</label>
-          <input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+          <label>Nominal Ditalangi (Rp)</label>
+          <input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} required placeholder="mis. 50000" />
         </div>
-        <div className="flex items-end">
-          <button className={btn} disabled={busy}>
-            + Catat Talangan
-          </button>
-        </div>
+      </div>
+
+      <div className="mt-4 pt-3 border-t border-pink-50 flex items-center justify-end">
+        <button className={btn} disabled={busy}>
+          + Simpan Talangan
+        </button>
       </div>
       <ErrorText error={error} />
     </form>
@@ -497,6 +583,7 @@ export function AllocationForm({ batchId, members }: { batchId: string; members:
   const [memberId, setMemberId] = useState(members[0]?.id ?? "");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
+
   return (
     <form
       className={card}
@@ -518,14 +605,23 @@ export function AllocationForm({ batchId, members }: { batchId: string; members:
         );
       }}
     >
-      <h3 className="mb-3 font-semibold">Catat Alokasi Laba</h3>
-      <div className="grid gap-3 sm:grid-cols-4">
+      <div className="mb-4 flex items-center justify-between border-b border-pink-100/80 pb-3">
+        <h3 className="font-extrabold text-sm text-[#2D1B2D] flex items-center gap-2">
+          <span>📊</span>
+          <span>Catat Alokasi Laba Bersih</span>
+        </h3>
+        <span className="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200/80 rounded-full px-2.5 py-0.5">
+          Distribusi Laba
+        </span>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3">
         <div>
-          <label>Jenis</label>
+          <label>Jenis Alokasi</label>
           <select value={kind} onChange={(e) => setKind(e.target.value)}>
-            <option value="diputar">Diputar jadi modal</option>
-            <option value="ditahan">Ditahan di kas</option>
-            <option value="dibagi">Dibagi ke anggota</option>
+            <option value="diputar">🔄 Diputar jadi modal</option>
+            <option value="ditahan">🏦 Ditahan di kas</option>
+            <option value="dibagi">👥 Dibagi ke anggota</option>
           </select>
         </div>
         {kind === "dibagi" && (
@@ -542,16 +638,19 @@ export function AllocationForm({ batchId, members }: { batchId: string; members:
         )}
         <div>
           <label>Jumlah (Rp)</label>
-          <input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+          <input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} required placeholder="0" />
         </div>
         <div>
           <label>Catatan (opsional)</label>
-          <input value={note} onChange={(e) => setNote(e.target.value)} />
+          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="mis. Bagian laba Husein" />
         </div>
       </div>
-      <button className={`${btn} mt-3`} disabled={busy}>
-        + Tambah Alokasi
-      </button>
+
+      <div className="mt-4 pt-3 border-t border-pink-50 flex items-center justify-end">
+        <button className={btn} disabled={busy}>
+          + Tambah Alokasi
+        </button>
+      </div>
       <ErrorText error={error} />
     </form>
   );
@@ -577,21 +676,31 @@ export function CustomerForm() {
         );
       }}
     >
-      <h3 className="mb-3 font-semibold">Tambah Pelanggan</h3>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="mb-4 flex items-center justify-between border-b border-pink-100/80 pb-3">
+        <h3 className="font-extrabold text-sm text-[#2D1B2D] flex items-center gap-2">
+          <span>👥</span>
+          <span>Tambah Pelanggan Baru</span>
+        </h3>
+        <span className="text-[11px] font-bold text-pink-700 bg-pink-50 border border-pink-200/80 rounded-full px-2.5 py-0.5">
+          Kontak
+        </span>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label>Nama</label>
-          <input value={name} onChange={(e) => setName(e.target.value)} required />
+          <label>Nama Pelanggan</label>
+          <input value={name} onChange={(e) => setName(e.target.value)} required placeholder="mis. Bu Dokter Ani" />
         </div>
         <div>
-          <label>Catatan (opsional)</label>
-          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="mis. Puskesmas" />
+          <label>Catatan / Lokasi (opsional)</label>
+          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="mis. Puskesmas Lt. 2" />
         </div>
-        <div className="flex items-end">
-          <button className={btn} disabled={busy}>
-            + Tambah
-          </button>
-        </div>
+      </div>
+
+      <div className="mt-4 pt-3 border-t border-pink-50 flex items-center justify-end">
+        <button className={btn} disabled={busy}>
+          + Simpan Pelanggan
+        </button>
       </div>
       <ErrorText error={error} />
     </form>
@@ -611,31 +720,51 @@ export function CustomerEdit({
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(initialName);
   const [note, setNote] = useState(initialNote ?? "");
+
   if (!open)
     return (
-      <button type="button" className="text-xs font-medium text-amber-700 underline" onClick={() => setOpen(true)}>
-        Ubah
+      <button
+        type="button"
+        className="inline-flex items-center gap-1 rounded-full bg-pink-50 border border-pink-200 px-3 py-1 text-xs font-bold text-pink-700 hover:bg-pink-100 transition-all cursor-pointer"
+        onClick={() => setOpen(true)}
+      >
+        ✏️ Ubah
       </button>
     );
+
   return (
     <form
-      className="mt-2 flex flex-wrap items-end gap-2"
+      className="mt-3 rounded-2xl border border-pink-200 bg-pink-50/50 p-4 space-y-3"
       onSubmit={(e) => {
         e.preventDefault();
         void run(() => api(`/api/customers/${id}`, "PATCH", { name, note: note || null }));
       }}
     >
-      <div>
-        <label>Nama</label>
-        <input value={name} onChange={(e) => setName(e.target.value)} required />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label>Nama Pelanggan</label>
+          <input value={name} onChange={(e) => setName(e.target.value)} required />
+        </div>
+        <div>
+          <label>Catatan</label>
+          <input value={note} onChange={(e) => setNote(e.target.value)} />
+        </div>
       </div>
-      <div>
-        <label>Catatan</label>
-        <input value={note} onChange={(e) => setNote(e.target.value)} />
+      <div className="flex items-center justify-end gap-2 pt-2 border-t border-pink-100">
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="text-xs text-[#7A6273] hover:underline px-3 py-1"
+        >
+          Batal
+        </button>
+        <button
+          className="rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:from-pink-600 hover:to-rose-600 disabled:opacity-50 transition-all cursor-pointer"
+          disabled={busy}
+        >
+          Simpan Perubahan
+        </button>
       </div>
-      <button className="rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50" disabled={busy}>
-        Simpan
-      </button>
       <ErrorText error={error} />
     </form>
   );
@@ -662,28 +791,38 @@ export function MemberForm() {
         );
       }}
     >
-      <h3 className="mb-3 font-semibold">Tambah Anggota (whitelist login Google)</h3>
-      <div className="grid gap-3 sm:grid-cols-4">
+      <div className="mb-4 flex items-center justify-between border-b border-pink-100/80 pb-3">
+        <h3 className="font-extrabold text-sm text-[#2D1B2D] flex items-center gap-2">
+          <span>👑</span>
+          <span>Tambah Anggota Tim (Whitelist Google)</span>
+        </h3>
+        <span className="text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-200/80 rounded-full px-2.5 py-0.5">
+          Akses Tim
+        </span>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3">
         <div>
-          <label>Nama</label>
-          <input value={name} onChange={(e) => setName(e.target.value)} required />
+          <label>Nama Anggota</label>
+          <input value={name} onChange={(e) => setName(e.target.value)} required placeholder="mis. Husein" />
         </div>
         <div>
-          <label>Email Google</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <label>Email Akun Google</label>
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="nama@gmail.com" />
         </div>
         <div>
-          <label>Peran</label>
+          <label>Peran / Role</label>
           <select value={role} onChange={(e) => setRole(e.target.value)}>
-            <option value="anggota">Anggota</option>
-            <option value="bendahara">Bendahara</option>
+            <option value="anggota">🌸 Anggota</option>
+            <option value="bendahara">👑 Bendahara</option>
           </select>
         </div>
-        <div className="flex items-end">
-          <button className={btn} disabled={busy}>
-            + Tambah
-          </button>
-        </div>
+      </div>
+
+      <div className="mt-4 pt-3 border-t border-pink-50 flex items-center justify-end">
+        <button className={btn} disabled={busy}>
+          + Daftarkan Anggota
+        </button>
       </div>
       <ErrorText error={error} />
     </form>
@@ -708,21 +847,31 @@ export function ProductForm() {
         );
       }}
     >
-      <h3 className="mb-3 font-semibold">Tambah Produk</h3>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="mb-4 flex items-center justify-between border-b border-pink-100/80 pb-3">
+        <h3 className="font-extrabold text-sm text-[#2D1B2D] flex items-center gap-2">
+          <span>🍧</span>
+          <span>Tambah Varian Asinan Baru</span>
+        </h3>
+        <span className="text-[11px] font-bold text-pink-700 bg-pink-50 border border-pink-200/80 rounded-full px-2.5 py-0.5">
+          Produk
+        </span>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label>Nama produk</label>
-          <input value={name} onChange={(e) => setName(e.target.value)} required />
+          <label>Nama Varian Produk</label>
+          <input value={name} onChange={(e) => setName(e.target.value)} required placeholder="mis. Asinan Buah Segar Cup 300ml" />
         </div>
         <div>
-          <label>Harga (Rp)</label>
-          <input type="number" min="1" value={price} onChange={(e) => setPrice(e.target.value)} required />
+          <label>Harga Jual (Rp)</label>
+          <input type="number" min="1" value={price} onChange={(e) => setPrice(e.target.value)} required placeholder="mis. 15000" />
         </div>
-        <div className="flex items-end">
-          <button className={btn} disabled={busy}>
-            + Tambah
-          </button>
-        </div>
+      </div>
+
+      <div className="mt-4 pt-3 border-t border-pink-50 flex items-center justify-end">
+        <button className={btn} disabled={busy}>
+          + Tambah Produk
+        </button>
       </div>
       <ErrorText error={error} />
     </form>
@@ -734,17 +883,19 @@ export function ProductPriceEdit({ id, initialPrice }: { id: string; initialPric
   const [price, setPrice] = useState(String(initialPrice));
   return (
     <form
-      className="flex items-end gap-2"
+      className="flex items-center gap-2"
       onSubmit={(e) => {
         e.preventDefault();
         void run(() => api(`/api/products/${id}`, "PATCH", { price: Number(price) }));
       }}
     >
       <div className="w-32">
-        <label>Harga (Rp)</label>
         <input type="number" min="1" value={price} onChange={(e) => setPrice(e.target.value)} />
       </div>
-      <button className="rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50" disabled={busy}>
+      <button
+        className="rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:from-pink-600 hover:to-rose-600 disabled:opacity-50 transition-all cursor-pointer shrink-0"
+        disabled={busy}
+      >
         Simpan
       </button>
       <ErrorText error={error} />

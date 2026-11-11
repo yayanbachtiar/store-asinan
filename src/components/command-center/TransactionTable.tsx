@@ -106,7 +106,7 @@ export function TransactionTable({
   };
 
   const handleDeleteOrder = async (orderId: string) => {
-    if (!confirm("Hapus order ini?")) return;
+    if (!confirm("Hapus catatan pesanan ini?")) return;
     setActionError(null);
     try {
       const res = await fetch(`/api/orders/${orderId}`, { method: "DELETE" });
@@ -121,7 +121,7 @@ export function TransactionTable({
   };
 
   const handleDeleteExpense = async (expenseId: string) => {
-    if (!confirm("Hapus pengeluaran ini?")) return;
+    if (!confirm("Hapus catatan belanja ini?")) return;
     setActionError(null);
     try {
       const res = await fetch(`/api/expenses/${expenseId}`, { method: "DELETE" });
@@ -136,32 +136,32 @@ export function TransactionTable({
   };
 
   return (
-    <div className="rounded-2xl border border-slate-200/90 bg-white shadow-xs overflow-hidden">
+    <div className="rounded-3xl border border-pink-200/80 bg-white shadow-xs overflow-hidden">
       {/* Top Bar: Tabs & Search */}
-      <div className="border-b border-slate-100 bg-slate-50/50 p-3 sm:px-5 sm:py-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        {/* Main Tabs */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-200/60 rounded-xl w-fit">
+      <div className="border-b border-pink-100/80 bg-[#FFFDF9] p-3 sm:px-5 sm:py-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        {/* Main Tabs (Pill Capsule) */}
+        <div className="flex items-center gap-1.5 p-1 bg-pink-100/60 rounded-full w-fit">
           <button
             type="button"
             onClick={() => setActiveTab("orders")}
-            className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${
+            className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all ${
               activeTab === "orders"
-                ? "bg-white text-emerald-800 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-white text-rose-600 shadow-xs"
+                : "text-[#7A6273] hover:text-[#2D1B2D]"
             }`}
           >
-            Penjualan ({orders.length})
+            🌸 Penjualan ({orders.length})
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("expenses")}
-            className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${
+            className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all ${
               activeTab === "expenses"
-                ? "bg-white text-emerald-800 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-white text-rose-600 shadow-xs"
+                : "text-[#7A6273] hover:text-[#2D1B2D]"
             }`}
           >
-            Belanja Bahan ({expenses.length})
+            🧺 Belanja Bahan ({expenses.length})
           </button>
         </div>
 
@@ -169,16 +169,16 @@ export function TransactionTable({
         <div className="w-full sm:w-64">
           <input
             type="text"
-            placeholder={activeTab === "orders" ? "Cari pelanggan / produk..." : "Cari belanja / pembayar..."}
+            placeholder={activeTab === "orders" ? "🔍 Cari pelanggan / produk..." : "🔍 Cari belanja / nama..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 focus:border-emerald-500 focus:outline-none"
+            className="rounded-full border border-pink-200/80 bg-white px-3.5 py-1.5 text-xs text-[#2D1B2D] placeholder-[#A892A2] focus:border-pink-400 focus:outline-none"
           />
         </div>
       </div>
 
       {actionError && (
-        <div className="border-b border-rose-100 bg-rose-50 px-4 py-2 text-xs text-rose-700 flex justify-between items-center">
+        <div className="border-b border-rose-200 bg-rose-50 px-4 py-2.5 text-xs text-rose-800 flex justify-between items-center">
           <span>{actionError}</span>
           <button
             type="button"
@@ -194,15 +194,15 @@ export function TransactionTable({
       {activeTab === "orders" && (
         <div>
           {/* Sub Filters */}
-          <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-2 bg-white text-xs">
-            <span className="text-slate-400 text-[11px] font-medium mr-1">Filter:</span>
+          <div className="flex items-center gap-2 border-b border-pink-100/60 px-4 py-2 bg-white text-xs">
+            <span className="text-[#7A6273] text-[11px] font-semibold mr-1">Filter:</span>
             <button
               type="button"
               onClick={() => setOrderFilter("semua")}
-              className={`rounded-full px-2.5 py-0.8 text-[11px] font-medium transition-colors ${
+              className={`rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
                 orderFilter === "semua"
-                  ? "bg-slate-800 text-white"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  ? "bg-[#2D1B2D] text-white shadow-2xs"
+                  : "bg-pink-50 text-[#7A6273] hover:bg-pink-100/70"
               }`}
             >
               Semua ({orders.length})
@@ -210,122 +210,132 @@ export function TransactionTable({
             <button
               type="button"
               onClick={() => setOrderFilter("lunas")}
-              className={`rounded-full px-2.5 py-0.8 text-[11px] font-medium transition-colors ${
+              className={`rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
                 orderFilter === "lunas"
-                  ? "bg-emerald-600 text-white"
+                  ? "bg-emerald-600 text-white shadow-2xs"
                   : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
               }`}
             >
-              Lunas ({lunasCount})
+              💖 Lunas ({lunasCount})
             </button>
             <button
               type="button"
               onClick={() => setOrderFilter("tempo")}
-              className={`rounded-full px-2.5 py-0.8 text-[11px] font-medium transition-colors ${
+              className={`rounded-full px-3 py-1 text-[11px] font-bold transition-all ${
                 orderFilter === "tempo"
-                  ? "bg-amber-600 text-white"
+                  ? "bg-amber-600 text-white shadow-2xs"
                   : "bg-amber-50 text-amber-800 hover:bg-amber-100"
               }`}
             >
-              Belum Bayar / Tempo ({tempoCount})
+              ⏳ Belum Bayar / Tempo ({tempoCount})
             </button>
           </div>
 
           {filteredOrders.length === 0 ? (
-            <div className="p-8 text-center text-xs text-slate-500">
-              Tidak ada data penjualan yang cocok.
+            <div className="p-10 text-center text-xs text-[#7A6273] space-y-2">
+              <span className="text-3xl block">🍧</span>
+              <p className="font-semibold text-[#2D1B2D]">
+                Belum ada data penjualan yang cocok
+              </p>
+              <p className="text-[11px] text-[#A892A2]">
+                Yuk catat pesanan baru dengan tombol &apos;+ Catat Penjualan&apos; di atas 🌸
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="border-b border-slate-200/80 bg-slate-50/70 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                    <th className="py-2.5 pl-4 pr-2">Waktu</th>
-                    <th className="py-2.5 px-3">Pelanggan & Item</th>
-                    <th className="py-2.5 px-3 text-right">Cup</th>
-                    <th className="py-2.5 px-3 text-right">Total</th>
-                    <th className="py-2.5 px-3 text-center">Status</th>
-                    <th className="py-2.5 pl-3 pr-4 text-right">Aksi</th>
+                  <tr className="border-b border-pink-100 bg-[#FFFDF9] text-[11px] font-bold uppercase tracking-wider text-[#7A6273]">
+                    <th className="py-3 pl-4 pr-2">Waktu</th>
+                    <th className="py-3 px-3">Pelanggan &amp; Item</th>
+                    <th className="py-3 px-3 text-right">Cup</th>
+                    <th className="py-3 px-3 text-right">Total</th>
+                    <th className="py-3 px-3 text-center">Status</th>
+                    <th className="py-3 pl-3 pr-4 text-right">Aksi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-pink-100/70">
                   {filteredOrders.map((o) => {
                     const cupCount = o.items.reduce((sum, item) => sum + item.qty, 0);
                     const isPaid = o.paymentStatus === "sudah";
                     const isBusy = busyOrderId === o.id;
 
+                    const sourceBadge =
+                      o.source === "wa"
+                        ? { bg: "bg-emerald-100 text-emerald-800", icon: "💬", label: "WA" }
+                        : o.source === "puskesmas"
+                        ? { bg: "bg-blue-100 text-blue-800", icon: "🏥", label: "Puskesmas" }
+                        : { bg: "bg-pink-100 text-pink-800", icon: "🛍️", label: "Stand" };
+
                     return (
                       <tr
                         key={o.id}
-                        className="even:bg-slate-50/50 hover:bg-emerald-50/30 transition-colors"
+                        className="even:bg-pink-50/20 hover:bg-pink-50/60 transition-colors"
                       >
                         {/* Waktu */}
-                        <td className="py-2.5 pl-4 pr-2 align-middle whitespace-nowrap text-slate-500">
-                          <span className="font-semibold text-slate-700">{formatTime(o.createdAt)}</span>
-                          <span className="block text-[10px] text-slate-400">{formatDate(o.createdAt)}</span>
+                        <td className="py-3 pl-4 pr-2 align-middle whitespace-nowrap text-[#7A6273]">
+                          <span className="font-bold text-[#2D1B2D]">{formatTime(o.createdAt)}</span>
+                          <span className="block text-[10px] text-[#A892A2]">{formatDate(o.createdAt)}</span>
                         </td>
 
                         {/* Pelanggan & Items */}
-                        <td className="py-2.5 px-3 align-middle">
+                        <td className="py-3 px-3 align-middle">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-bold text-slate-900">{o.customerName}</span>
+                            <span className="font-extrabold text-[#2D1B2D]">{o.customerName}</span>
                             <span
-                              className={`rounded px-1.5 py-0.2 text-[9px] font-semibold uppercase tracking-wider ${
-                                o.source === "wa"
-                                  ? "bg-green-100 text-green-800"
-                                  : o.source === "puskesmas"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : "bg-slate-100 text-slate-700"
-                              }`}
+                              className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider inline-flex items-center gap-1 ${sourceBadge.bg}`}
                             >
-                              {o.source}
+                              <span>{sourceBadge.icon}</span>
+                              <span>{sourceBadge.label}</span>
                             </span>
                           </div>
-                          <p className="text-[11px] text-slate-500 mt-0.5">
+                          <p className="text-[11px] text-[#7A6273] mt-0.5">
                             {o.items.map((i) => `${i.qty}× ${i.productNameSnapshot}`).join(", ")}
                           </p>
                         </td>
 
                         {/* Qty Cup */}
-                        <td className="py-2.5 px-3 align-middle text-right whitespace-nowrap font-medium text-slate-700">
-                          {cupCount}
+                        <td className="py-3 px-3 align-middle text-right whitespace-nowrap font-bold text-[#7A6273]">
+                          <span className="rounded-full bg-pink-100/70 px-2 py-0.5 text-[11px] font-bold text-pink-900">
+                            {cupCount} cup
+                          </span>
                         </td>
 
                         {/* Total Nominal */}
-                        <td className="py-2.5 px-3 align-middle text-right whitespace-nowrap font-bold text-slate-900">
+                        <td className="py-3 px-3 align-middle text-right whitespace-nowrap font-black text-[#2D1B2D]">
                           {formatRp(o.total)}
                         </td>
 
                         {/* Status */}
-                        <td className="py-2.5 px-3 align-middle text-center whitespace-nowrap">
+                        <td className="py-3 px-3 align-middle text-center whitespace-nowrap">
                           {isPaid ? (
-                            <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
-                              ✓ Lunas
+                            <span className="inline-flex items-center rounded-full bg-emerald-100/80 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-200/60 shadow-2xs">
+                              💖 Lunas
                             </span>
                           ) : (
-                            <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-600/20">
-                              Belum Bayar
+                            <span className="inline-flex items-center rounded-full bg-amber-100/80 px-2.5 py-0.5 text-[10px] font-bold text-amber-800 border border-amber-200/60 shadow-2xs">
+                              ⏳ Belum Bayar
                             </span>
                           )}
                         </td>
 
                         {/* Aksi */}
-                        <td className="py-2.5 pl-3 pr-4 align-middle text-right whitespace-nowrap">
+                        <td className="py-3 pl-3 pr-4 align-middle text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-2">
                             {!isPaid && (
                               <button
                                 type="button"
                                 disabled={isBusy}
                                 onClick={() => handleQuickPay(o)}
-                                className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-[11px] font-semibold text-white shadow-2xs hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                                className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-3 py-1 text-[11px] font-bold text-white shadow-xs hover:from-pink-600 hover:to-rose-600 disabled:opacity-50 active:scale-95 transition-all"
                               >
-                                {isBusy ? "..." : "⚡ Lunasi"}
+                                {isBusy ? "..." : "✨ Lunasi"}
                               </button>
                             )}
                             <button
                               type="button"
                               onClick={() => handleDeleteOrder(o.id)}
-                              className="text-[11px] text-slate-400 hover:text-rose-600 transition-colors"
+                              className="text-[11px] text-[#A892A2] hover:text-rose-600 transition-colors p-1"
                               title="Hapus order"
                             >
                               Hapus
@@ -346,54 +356,62 @@ export function TransactionTable({
       {activeTab === "expenses" && (
         <div>
           {filteredExpenses.length === 0 ? (
-            <div className="p-8 text-center text-xs text-slate-500">
-              Belum ada data belanja bahan pada batch ini.
+            <div className="p-10 text-center text-xs text-[#7A6273] space-y-2">
+              <span className="text-3xl block">🧺</span>
+              <p className="font-semibold text-[#2D1B2D]">
+                Belum ada data belanja bahan pada batch ini
+              </p>
+              <p className="text-[11px] text-[#A892A2]">
+                Klik &apos;- Belanja Bahan&apos; untuk mulai mencatat pengeluaran modal batch 🌸
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="border-b border-slate-200/80 bg-slate-50/70 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                    <th className="py-2.5 pl-4 pr-2">Waktu</th>
-                    <th className="py-2.5 px-3">Keterangan Belanja</th>
-                    <th className="py-2.5 px-3">Ditalangi Oleh</th>
-                    <th className="py-2.5 px-3 text-right">Nominal</th>
-                    <th className="py-2.5 pl-3 pr-4 text-right">Aksi</th>
+                  <tr className="border-b border-pink-100 bg-[#FFFDF9] text-[11px] font-bold uppercase tracking-wider text-[#7A6273]">
+                    <th className="py-3 pl-4 pr-2">Waktu</th>
+                    <th className="py-3 px-3">Keterangan Belanja Bahan</th>
+                    <th className="py-3 px-3">Ditalangi Oleh</th>
+                    <th className="py-3 px-3 text-right">Nominal</th>
+                    <th className="py-3 pl-3 pr-4 text-right">Aksi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-pink-100/70">
                   {filteredExpenses.map((e) => (
                     <tr
                       key={e.id}
-                      className="even:bg-slate-50/50 hover:bg-emerald-50/30 transition-colors"
+                      className="even:bg-pink-50/20 hover:bg-pink-50/60 transition-colors"
                     >
                       {/* Waktu */}
-                      <td className="py-2.5 pl-4 pr-2 align-middle whitespace-nowrap text-slate-500">
-                        <span className="font-semibold text-slate-700">{formatTime(e.createdAt)}</span>
-                        <span className="block text-[10px] text-slate-400">{formatDate(e.createdAt)}</span>
+                      <td className="py-3 pl-4 pr-2 align-middle whitespace-nowrap text-[#7A6273]">
+                        <span className="font-bold text-[#2D1B2D]">{formatTime(e.createdAt)}</span>
+                        <span className="block text-[10px] text-[#A892A2]">{formatDate(e.createdAt)}</span>
                       </td>
 
                       {/* Keterangan */}
-                      <td className="py-2.5 px-3 align-middle font-medium text-slate-900">
+                      <td className="py-3 px-3 align-middle font-bold text-[#2D1B2D]">
                         {e.description}
                       </td>
 
                       {/* Ditalangi Oleh */}
-                      <td className="py-2.5 px-3 align-middle text-slate-600">
-                        {e.paidByName}
+                      <td className="py-3 px-3 align-middle text-[#7A6273]">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2 py-0.5 text-[11px] font-semibold text-purple-700 border border-purple-200/50">
+                          🌸 {e.paidByName}
+                        </span>
                       </td>
 
                       {/* Nominal */}
-                      <td className="py-2.5 px-3 align-middle text-right whitespace-nowrap font-bold text-slate-900">
+                      <td className="py-3 px-3 align-middle text-right whitespace-nowrap font-black text-rose-600">
                         {formatRp(e.amount)}
                       </td>
 
                       {/* Aksi */}
-                      <td className="py-2.5 pl-3 pr-4 align-middle text-right whitespace-nowrap">
+                      <td className="py-3 pl-3 pr-4 align-middle text-right whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() => handleDeleteExpense(e.id)}
-                          className="text-[11px] text-slate-400 hover:text-rose-600 transition-colors"
+                          className="text-[11px] text-[#A892A2] hover:text-rose-600 transition-colors p-1"
                           title="Hapus belanja"
                         >
                           Hapus
