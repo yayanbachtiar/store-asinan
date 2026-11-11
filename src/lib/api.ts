@@ -1,6 +1,27 @@
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 import { z } from "zod";
 import { requireApiMember, type SessionMember } from "./auth";
+import { createLogger, parseTraceContext, type Logger } from "./logger";
+
+export async function getRequestLogger(): Promise<Logger> {
+  try {
+    const reqHeaders = await headers();
+    const requestId = reqHeaders.get("x-request-id") || undefined;
+    const traceHeader = reqHeaders.get("x-cloud-trace-context");
+    const parsedTrace = parseTraceContext(traceHeader);
+    const traceId = parsedTrace.traceId || reqHeaders.get("x-trace-id") || undefined;
+
+    return createLogger({
+      requestId,
+      traceId,
+      spanId: parsedTrace.spanId,
+      traceSampled: parsedTrace.sampled,
+    });
+  } catch {
+    return createLogger();
+  }
+}
 
 export async function guardApi(): Promise<
   { member: SessionMember } | { response: NextResponse }

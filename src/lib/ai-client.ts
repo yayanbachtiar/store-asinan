@@ -1,4 +1,5 @@
 import { formatRp } from "./format";
+import { logger } from "./logger";
 
 export interface BatchContext {
   id: string;
@@ -128,6 +129,58 @@ export async function generateStoreContextPrompt(): Promise<string> {
 }
 
 /**
+ * Parse respons dari OpenAI-compatible endpoint.
+ * Mendukung JSON standar { choices: [{ message: { content } }] }
+ * dan Server-Sent Events (SSE) data stream chunks (data: {...}) agar tidak crash
+ * jika upstream/router mengirim format stream.
+ */
+export function parseChatCompletionResponse(rawText: string): string | null {
+  const trimmed = rawText.trim();
+  if (!trimmed) return null;
+
+  // Jika response adalah Server-Sent Events (SSE) data stream
+  if (trimmed.startsWith("data:") || trimmed.includes("\ndata:")) {
+    const lines = trimmed.split("\n");
+    let accumulated = "";
+
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      if (!trimmedLine.startsWith("data:")) continue;
+      const jsonStr = trimmedLine.slice(5).trim();
+      if (!jsonStr || jsonStr === "[DONE]") continue;
+
+      try {
+        const chunk = JSON.parse(jsonStr) as {
+          choices?: Array<{
+            delta?: { content?: string };
+            message?: { content?: string };
+          }>;
+        };
+        const delta =
+          chunk.choices?.[0]?.delta?.content ||
+          chunk.choices?.[0]?.message?.content ||
+          "";
+        accumulated += delta;
+      } catch {
+        // Abaikan chunk non-JSON (misal heartbeat)
+      }
+    }
+
+    return accumulated.trim() || null;
+  }
+
+  // Jika response adalah standard JSON chat completion
+  try {
+    const data = JSON.parse(trimmed) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    return data.choices?.[0]?.message?.content?.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Panggil 9Router OpenAI-compatible chat completion.
  */
 export async function askAiChat(
@@ -155,27 +208,42 @@ export async function askAiChat(
       body: JSON.stringify({
         model,
         messages: fullMessages,
+        stream: false,
       }),
     });
 
     if (!res.ok) {
       const errBody = await res.text().catch(() => "");
-      console.error("[9Router AI Error]", res.status, errBody);
+      logger.error("9Router AI Error", undefined, {
+        status: res.status,
+        body: errBody,
+        baseUrl,
+        model,
+      });
       return `Maaf, asisten AI sedang mengalami kendala jaringan ke 9Router (${res.status}).`;
     }
 
-    const data = (await res.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
+    let rawText: string;
+    if (typeof res.text === "function") {
+      rawText = await res.text();
+    } else if (typeof res.json === "function") {
+      rawText = JSON.stringify(await res.json());
+    } else {
+      rawText = "";
+    }
+    const reply = parseChatCompletionResponse(rawText);
 
-    const reply = data.choices?.[0]?.message?.content?.trim();
     if (!reply) {
+      logger.warn("9Router empty or unparseable response", {
+        rawLength: rawText.length,
+        preview: rawText.slice(0, 150),
+      });
       return "Maaf, asisten AI tidak memberikan respons teks.";
     }
 
     return reply;
   } catch (error) {
-    console.error("[9Router Connection Failed]", error);
+    logger.error("9Router Connection Failed", error, { baseUrl, model });
     return "Maaf, asisten AI sedang tidak dapat terhubung ke 9Router (port 20127). Pastikan 9router aktif.";
   }
 }

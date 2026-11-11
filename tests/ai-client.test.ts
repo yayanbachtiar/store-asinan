@@ -75,6 +75,45 @@ describe("ai-client askAiChat", () => {
     expect(reply).toBe("Halo! Omset batch aktif saat ini Rp250.000.");
   });
 
+  it("sends stream: false in payload to 9router", async () => {
+    let capturedBody: any;
+    global.fetch = vi.fn().mockImplementation((url, opts) => {
+      capturedBody = JSON.parse(opts.body);
+      return Promise.resolve({
+        ok: true,
+        text: async () =>
+          JSON.stringify({
+            choices: [{ message: { content: "Pesan non-stream" } }],
+          }),
+      });
+    });
+
+    const reply = await askAiChat([{ role: "user", content: "Test" }]);
+    expect(reply).toBe("Pesan non-stream");
+    expect(capturedBody.stream).toBe(false);
+  });
+
+  it("gracefully parses SSE stream data chunks when 9router sends data: lines", async () => {
+    const sseResponse = `data: {"id":"chatcmpl-1","choices":[{"delta":{"role":"assistant"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-1","choices":[{"delta":{"content":"Halo Kak! "},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-1","choices":[{"delta":{"content":"Ada yang bisa dibantu?"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-1","choices":[{"delta":{},"finish_reason":"stop"}]}
+
+data: [DONE]
+`;
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => sseResponse,
+    } as unknown as Response);
+
+    const reply = await askAiChat([{ role: "user", content: "Halo" }]);
+    expect(reply).toBe("Halo Kak! Ada yang bisa dibantu?");
+  });
+
   it("returns fallback message if fetch throws network error", async () => {
     global.fetch = vi.fn().mockRejectedValue(new Error("Network connection refused"));
 

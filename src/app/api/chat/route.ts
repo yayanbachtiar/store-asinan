@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { badRequest, guardApi, parseBody } from "@/lib/api";
+import { badRequest, getRequestLogger, guardApi, parseBody } from "@/lib/api";
 import { askAiChat, type ChatMessage } from "@/lib/ai-client";
 
 const messageSchema = z.object({
@@ -16,9 +16,20 @@ export async function POST(request: Request) {
   const guard = await guardApi();
   if ("response" in guard) return guard.response;
 
+  const logger = await getRequestLogger();
+
   const rawJson = await request.json().catch(() => null);
   const body = parseBody(chatBodySchema, rawJson);
-  if (!body) return badRequest("Payload chat tidak valid");
+  if (!body) {
+    logger.warn("Payload chat tidak valid", { userId: guard.member.id });
+    return badRequest("Payload chat tidak valid");
+  }
+
+  logger.info("AI chat request received", {
+    userId: guard.member.id,
+    userEmail: guard.member.email,
+    messageCount: body.messages.length,
+  });
 
   const reply = await askAiChat(body.messages as ChatMessage[]);
   return NextResponse.json({ reply });

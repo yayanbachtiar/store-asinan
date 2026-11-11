@@ -164,6 +164,7 @@ Aturan:
         ],
         temperature: 0.7,
         max_tokens: 1000,
+        stream: false,
       }),
     });
 
@@ -172,8 +173,30 @@ Aturan:
       return `⚠️ Gagal menghubungi 9Router (${res.status}): ${errText}`;
     }
 
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content || "Maaf, AI tidak memberikan balasan.";
+    const rawText = await res.text();
+    const trimmed = rawText.trim();
+
+    if (trimmed.startsWith("data:") || trimmed.includes("\ndata:")) {
+      let accumulated = "";
+      for (const line of trimmed.split("\n")) {
+        const t = line.trim();
+        if (!t.startsWith("data:")) continue;
+        const jsonStr = t.slice(5).trim();
+        if (!jsonStr || jsonStr === "[DONE]") continue;
+        try {
+          const chunk = JSON.parse(jsonStr);
+          accumulated += chunk.choices?.[0]?.delta?.content || chunk.choices?.[0]?.message?.content || "";
+        } catch {}
+      }
+      return accumulated.trim() || "Maaf, AI tidak memberikan balasan.";
+    }
+
+    try {
+      const data = JSON.parse(trimmed);
+      return data.choices?.[0]?.message?.content || "Maaf, AI tidak memberikan balasan.";
+    } catch {
+      return "Maaf, format balasan AI tidak dikenali.";
+    }
   } catch (err) {
     return `⚠️ Koneksi ke 9Router gagal: ${err.message}. Pastikan daemon 9Router aktif di ${ROUTER_URL}.`;
   }
