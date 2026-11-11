@@ -8,19 +8,19 @@ export function StatCard({
   sub?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-amber-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-stone-500">{label}</p>
-      <p className="mt-1 text-xl font-bold">{value}</p>
-      {sub && <p className="mt-0.5 text-xs text-stone-500">{sub}</p>}
+    <div className="rounded-xl border border-slate-200/80 bg-white/95 p-4 shadow-xs transition-shadow hover:shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="mt-1.5 text-2xl font-bold tracking-tight text-slate-900">{value}</p>
+      {sub && <p className="mt-1 text-xs text-slate-500">{sub}</p>}
     </div>
   );
 }
 
 export function DbUnavailable() {
   return (
-    <div className="rounded-2xl border border-amber-300 bg-amber-100 p-4 text-sm">
+    <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-900">
       <p className="font-semibold">Database belum tersedia.</p>
-      <p className="mt-1 text-stone-600">
+      <p className="mt-1 text-xs text-amber-800">
         Halaman ini membaca Firestore saat runtime. Pastikan konfigurasi Firebase
         (project ID &amp; kredensial Admin SDK / service account Cloud Run) sudah benar,
         dan produk awal sudah di-seed (<code>pnpm seed:products</code>).
@@ -30,5 +30,5 @@ export function DbUnavailable() {
 }
 
 export function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <h2 className="mb-3 mt-8 text-lg font-bold">{children}</h2>;
+  return <h2 className="mb-3 mt-6 text-base font-bold tracking-tight text-slate-900">{children}</h2>;
 }
