@@ -18,6 +18,14 @@
 // lalu peran dokumen ini bisa diubah dari sana juga).
 import { applicationDefault, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
+// Muat file .env di root repo (bila ada) lebih dulu, supaya FIREBASE_PROJECT_ID
+// dkk. bisa cukup ditulis di .env tanpa harus diekspor di shell.
+// Variabel yang sudah ter-set di shell TIDAK ditimpa (loadEnvFile memang begitu).
+const envFile = fileURLToPath(new URL("../.env", import.meta.url));
+if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 const projectId =
   process.env.FIREBASE_PROJECT_ID ?? process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;

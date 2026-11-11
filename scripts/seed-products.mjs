@@ -7,6 +7,13 @@
 //   - Cloud Run / GCP:   kredensial bawaan runtime (ADC), cukup FIREBASE_PROJECT_ID.
 import { applicationDefault, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
+// Muat file .env di root repo (bila ada) lebih dulu — variabel yang sudah
+// ter-set di shell tidak ditimpa.
+const envFile = fileURLToPath(new URL("../.env", import.meta.url));
+if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 const projectId =
   process.env.FIREBASE_PROJECT_ID ?? process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
