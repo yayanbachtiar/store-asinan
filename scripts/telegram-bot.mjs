@@ -10,6 +10,7 @@
 
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { authorizeTelegramUser, formatUnauthorizedMessage } from "./telegram-bot-helper.mjs";
 
 // Muat .env di root repo
 const envFile = fileURLToPath(new URL("../.env", import.meta.url));
@@ -45,20 +46,6 @@ Untuk menghubungkan Bot Telegram Asinan dengan 9Router (kimi):
 `);
 }
 
-function isUserAuthorized(user, allowedList) {
-  if (!allowedList || !allowedList.trim()) return true;
-  const allowed = allowedList
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-  if (allowed.length === 0) return true;
-
-  const idStr = String(user.id);
-  const usernameStr = (user.username || "").toLowerCase();
-
-  return allowed.includes(idStr) || (Boolean(usernameStr) && allowed.includes(usernameStr));
-}
-
 async function tgPost(method, payload) {
   const url = `https://api.telegram.org/bot${BOT_TOKEN}/${method}`;
   const res = await fetch(url, {
@@ -69,13 +56,11 @@ async function tgPost(method, payload) {
   return res.json();
 }
 
-async function getStoreSnapshot() {
+async function getFirestoreInstance() {
   const projectId = process.env.FIREBASE_PROJECT_ID ?? process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
   const emulatorHost = process.env.FIRESTORE_EMULATOR_HOST;
 
-  if (!projectId && !emulatorHost) {
-    return "Status Toko: Data Firestore lokal / Firebase belum dihubungkan.";
-  }
+  if (!projectId && !emulatorHost) return null;
 
   try {
     const { getApps, initializeApp, applicationDefault } = await import("firebase-admin/app");
@@ -86,9 +71,21 @@ async function getStoreSnapshot() {
       initializeApp(
         emulatorHost ? { projectId: "demo-kas-asinan" } : { projectId, credential: applicationDefault() }
       );
-    const db = process.env.FIRESTORE_DATABASE_ID
+    return process.env.FIRESTORE_DATABASE_ID
       ? getFirestore(app, process.env.FIRESTORE_DATABASE_ID)
       : getFirestore(app);
+  } catch {
+    return null;
+  }
+}
+
+async function getStoreSnapshot(dbInstance) {
+  const db = dbInstance || (await getFirestoreInstance());
+  if (!db) {
+    return "Status Toko: Data Firestore lokal / Firebase belum dihubungkan.";
+  }
+
+  try {
 
     const batchesSnap = await db.collection("batches").orderBy("createdAt", "desc").limit(3).get();
     if (batchesSnap.empty) {
@@ -134,8 +131,8 @@ async function getStoreSnapshot() {
   }
 }
 
-async function askAi(userMessage) {
-  const storeContext = await getStoreSnapshot();
+async function askAi(userMessage, dbInstance) {
+  const storeContext = await getStoreSnapshot(dbInstance);
 
   const systemPrompt = `Kamu adalah Mas Asinan, asisten AI maskot pisang cerdas dan ramah untuk Toko Asinan Buah & Sayur.
 Karaktermu: hangat, sopan, sedikit santai, menggunakan emoji pisang 🍌 sesekali, dan ahli dalam keuangan UKM/warung (omset, kas, piutang, margin).
@@ -220,6 +217,13 @@ async function startBot() {
   console.log(`🤖 Terkoneksi ke 9Router di ${ROUTER_URL} [Model: ${ROUTER_MODEL}]`);
   console.log("👂 Mulai mendengarkan pesan Telegram (long-polling)... Tekan Ctrl+C untuk berhenti.\n");
 
+  const db = await getFirestoreInstance();
+  if (db) {
+    console.log("🔥 Terhubung ke Firestore untuk otorisasi anggota realtime.");
+  } else {
+    console.log("ℹ️  Firestore offline, menggunakan TELEGRAM_ALLOWED_USERS fallback.");
+  }
+
   let offset = 0;
   let isRunning = true;
 
@@ -249,16 +253,20 @@ async function startBot() {
 
           console.log(`📩 [${from.username || from.first_name || from.id}]: ${text}`);
 
-          if (!isUserAuthorized(from, ALLOWED_USERS)) {
+          const auth = await authorizeTelegramUser(from, db, ALLOWED_USERS);
+          if (!auth.authorized) {
             await tgPost("sendMessage", {
               chat_id: chatId,
-              text: `⛔ Maaf, akun Telegram Anda (ID: ${from.id}) belum diizinkan mengakses bot ini.`,
+              text: formatUnauthorizedMessage(from),
+              parse_mode: "Markdown",
             });
             continue;
           }
 
+          const callerName = auth.member?.name || from.first_name || "Kak";
+
           if (text === "/start" || text === "/help") {
-            const welcomeText = `Halo Kak! 🍌\nSaya Asisten AI Toko Asinan (ditenagai 9Router · kimi combo).\n\nKetik pertanyaan apa saja mengenai toko, misalnya:\n• *Berapa omset batch aktif?*\n• *Siapa saja yang belum bayar?*\n• *Berapa cup terjual dan laba sementara?*\n• */status* (cek ringkasan kilat)\n\nAda yang bisa saya bantu hari ini?`;
+            const welcomeText = `Halo Kak ${callerName}! 🍌\nSaya Asisten AI Toko Asinan (ditenagai 9Router · kimi combo).\n\nKetik pertanyaan apa saja mengenai toko, misalnya:\n• *Berapa omset batch aktif?*\n• *Siapa saja yang belum bayar?*\n• *Berapa cup terjual dan laba sementara?*\n• */status* (cek ringkasan kilat)\n\nAda yang bisa saya bantu hari ini?`;
             await tgPost("sendMessage", {
               chat_id: chatId,
               text: welcomeText,
@@ -269,7 +277,7 @@ async function startBot() {
 
           if (text === "/status") {
             await tgPost("sendChatAction", { chat_id: chatId, action: "typing" });
-            const snapshot = await getStoreSnapshot();
+            const snapshot = await getStoreSnapshot(db);
             await tgPost("sendMessage", {
               chat_id: chatId,
               text: snapshot,
@@ -280,7 +288,7 @@ async function startBot() {
 
           // Regular AI prompt
           await tgPost("sendChatAction", { chat_id: chatId, action: "typing" });
-          const reply = await askAi(text);
+          const reply = await askAi(text, db);
           await tgPost("sendMessage", {
             chat_id: chatId,
             text: reply,
