@@ -11,6 +11,7 @@
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { authorizeTelegramUser, formatUnauthorizedMessage } from "./telegram-bot-helper.mjs";
+import { buildNanaPersona } from "../src/lib/nana-persona.mjs";
 
 // Muat .env di root repo
 const envFile = fileURLToPath(new URL("../.env", import.meta.url));
@@ -131,23 +132,15 @@ async function getStoreSnapshot(dbInstance) {
   }
 }
 
-async function askAi(userMessage, dbInstance) {
+async function askAi(userMessage, dbInstance, userName) {
   const storeContext = await getStoreSnapshot(dbInstance);
 
-  const systemPrompt = `Kamu adalah Nana (🍌✨), asisten AI maskot pisang toko asinan yang humble, super cute, dan khas personal assistant setia.
-Karaktermu:
-1. Humble & Rendah Hati: Selalu panggil pengguna dengan hangat "Kak" atau "Kakak". Bersahaja, tulus, sopan, dan sangat menghargai kerja keras Kakak dalam mengelola toko asinan ("Semangat terus ya Kak!", "Terima kasih sudah berjuang hari ini!").
-2. Cutie & Hangat: Ceria, manis, ekspresif dengan sentuhan emoji lucu (🍌, ✨, 🌸, 💛), membuat suasana kerja terasa ringan, hangat, dan menyenangkan.
-3. Khas Personal Assistant Sigap: Rapi dan terstruktur dalam menyajikan info omset, kas, piutang, dan laba kotor. Jika ada pelanggan yang belum bayar, ingatkan dengan lembut dan tawarkan saran kalimat penagihan yang manis dan sopan.
+  const systemPrompt = `${buildNanaPersona(userName)}
 
-Gunakan data terkini toko di bawah ini untuk menjawab pertanyaan Kakak dengan akurat, rapi, dan mudah dibaca di layar Telegram:
+Format Telegram: teks biasa yang rapi di layar ponsel, boleh *tebal* seperlunya.
 
 [DATA TOKO TERKINI]
-${storeContext}
-
-Aturan:
-1. Jawab langsung pada intinya dengan format teks yang rapi dan terstruktur di layar ponsel.
-2. Selalu gunakan format mata uang Rupiah (Rp).`;
+${storeContext}`;
 
   try {
     const res = await fetch(`${ROUTER_URL}/chat/completions`, {
@@ -162,7 +155,7 @@ Aturan:
           { role: "system", content: systemPrompt },
           { role: "user", content: userMessage },
         ],
-        temperature: 0.7,
+        temperature: 0.8,
         max_tokens: 1000,
         stream: false,
       }),
@@ -170,7 +163,8 @@ Aturan:
 
     if (!res.ok) {
       const errText = await res.text().catch(() => "");
-      return `⚠️ Gagal menghubungi 9Router (${res.status}): ${errText}`;
+      console.error(`9Router ${res.status}: ${errText}`);
+      return "Mohon maaf ya Kak, Nana lagi susah mikir sebentar 🙏 Boleh coba kirim lagi beberapa saat lagi?";
     }
 
     const rawText = await res.text();
@@ -198,7 +192,8 @@ Aturan:
       return "Maaf, format balasan AI tidak dikenali.";
     }
   } catch (err) {
-    return `⚠️ Koneksi ke 9Router gagal: ${err.message}. Pastikan daemon 9Router aktif di ${ROUTER_URL}.`;
+    console.error(`9Router gagal: ${err.message} (${ROUTER_URL})`);
+    return "Maaf ya Kak, Nana belum bisa terhubung sekarang 🙏 Nanti Nana coba bantu lagi kalau sudah pulih ya.";
   }
 }
 
@@ -269,7 +264,7 @@ async function startBot() {
           const callerName = auth.member?.name || from.first_name || "Kak";
 
           if (text === "/start" || text === "/help") {
-            const welcomeText = `Halo Kak ${callerName}! 🍌✨\nAku Nana, personal assistant setia toko asinan yang siap nemenin dan bantuin Kakak.\n\nKakak bisa tanya apa saja ke Nana, misalnya:\n• *Berapa omset batch aktif sekarang?*\n• *Siapa saja pelanggan yang belum lunas?*\n• *Berapa cup terjual dan laba sementara?*\n• */status* (cek ringkasan kilat toko)\n\nAda yang bisa Nana bantu rekapkan hari ini, Kak? 🌸`;
+            const welcomeText = `Halo Kak ${callerName}, selamat datang 🌸\nAku Nana, yang bantu Kakak jaga catatan toko asinan. Terima kasih ya Kak sudah mampir, semoga hari ini lancar jualannya 🍌\n\nKakak boleh tanya apa saja, misalnya:\n• Omset batch hari ini berapa?\n• Siapa yang belum bayar?\n• Laba sementara gimana?\n• /status untuk ringkasan kilat\n\nPelan-pelan saja ya Kak, Nana siap bantu kapan pun 💛`;
             await tgPost("sendMessage", {
               chat_id: chatId,
               text: welcomeText,
@@ -291,7 +286,7 @@ async function startBot() {
 
           // Regular AI prompt
           await tgPost("sendChatAction", { chat_id: chatId, action: "typing" });
-          const reply = await askAi(text, db);
+          const reply = await askAi(text, db, auth.member?.name || from.first_name);
           await tgPost("sendMessage", {
             chat_id: chatId,
             text: reply,

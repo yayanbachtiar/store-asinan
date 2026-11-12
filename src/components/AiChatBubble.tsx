@@ -9,8 +9,8 @@ interface Message {
 }
 
 const QUICK_PROMPTS = [
-  "Berapa omset batch aktif, Nana? 🍌",
-  "Siapa pelanggan yang belum bayar? ⏳",
+  "Hari ini omsetnya berapa, Nana? 🍌",
+  "Siapa yang belum sempat bayar? ⏳",
   "Berapa cup terjual dan laba sementara? 💰",
   "Kas toko aman buat belanja bahan? ✨",
 ];
@@ -21,7 +21,7 @@ export function AiChatBubble() {
     {
       role: "assistant",
       content:
-        "Halo Kakak! 🍌✨ Aku Nana, personal assistant setia toko asinan Kakak. Mau Nana bantu rekapkan omset hari ini, pantau tagihan piutang, atau cek kas belanja? Tanya apa saja ya, Kak! 🌸",
+        "Halo Kak, selamat datang 🌸 Aku Nana. Terima kasih sudah bekerja keras mengurus toko hari ini 🍌 Kalau Kakak mau, Nana bisa bantu lihat omset, piutang, atau kas. Pelan-pelan saja ya Kak, Nana di sini 💛",
     },
   ]);
   const [input, setInput] = useState("");
@@ -160,7 +160,7 @@ export function AiChatBubble() {
                   <span className="inline-block h-2 w-2 rounded-full bg-rose-400 animate-bounce [animation-delay:0.2s]" />
                   <span className="inline-block h-2 w-2 rounded-full bg-amber-400 animate-bounce [animation-delay:0.4s]" />
                   <span className="text-[10px] ml-1 font-semibold text-pink-600">
-                    Nana lagi hitung buat Kakak... 🍌✨
+                    Sebentar ya Kak, Nana cek dulu... 🍌
                   </span>
                 </div>
               </div>
@@ -199,7 +199,7 @@ export function AiChatBubble() {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Tanya Nana apa saja... (mis. cek piutang)"
+                placeholder="Ceritakan ke Nana, Kak..."
                 className="flex-1 rounded-full border border-pink-200 bg-[#FFFDF9] px-4 py-2 text-xs text-[#2D1B2D] placeholder:text-[#7A6273]/60 focus:border-pink-400 focus:outline-none"
                 disabled={loading}
               />

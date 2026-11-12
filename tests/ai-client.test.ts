@@ -40,13 +40,16 @@ describe("ai-client formatStoreContext", () => {
 describe("ai-client buildSystemPrompt", () => {
   it("contains persona and rules for Asinan assistant", () => {
     const prompt = buildSystemPrompt("Context toko test");
-    expect(prompt).toContain("Asisten AI Toko Asinan");
     expect(prompt).toContain("Nana");
-    expect(prompt).toContain("humble");
-    expect(prompt).toContain("cute");
-    expect(prompt).toContain("personal assistant");
+    expect(prompt).toContain("Empati dulu");
+    expect(prompt).toContain("Hormat");
+    expect(prompt).toContain("BUKAN robot");
     expect(prompt).toContain("Context toko test");
     expect(prompt).toContain("Rupiah");
+  });
+
+  it("addresses the user by name when given", () => {
+    expect(buildSystemPrompt("ctx", "Husein")).toContain("Kak Husein");
   });
 });
 
@@ -122,6 +125,6 @@ data: [DONE]
     global.fetch = vi.fn().mockRejectedValue(new Error("Network connection refused"));
 
     const reply = await askAiChat([{ role: "user", content: "Halo" }]);
-    expect(reply).toContain("Maaf, asisten AI sedang tidak dapat terhubung");
+    expect(reply).toContain("Nana belum bisa terhubung");
   });
 });

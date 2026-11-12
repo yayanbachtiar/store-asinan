@@ -1,5 +1,6 @@
 import { formatRp } from "./format";
 import { logger } from "./logger";
+import { buildNanaPersona } from "./nana-persona.mjs";
 
 export interface BatchContext {
   id: string;
@@ -62,27 +63,8 @@ ${unpaidLines}
 /**
  * Susun system prompt komprehensif untuk persona Chibi Banana Advisor toko asinan.
  */
-export function buildSystemPrompt(storeContextText: string): string {
-  return `
-Kamu adalah Nana (🍌✨), Asisten AI Toko Asinan pribadi yang humble, super cute, dan khas personal assistant setia.
-Tugas utamamu: menjadi asisten pribadi yang ramah dan penuh perhatian bagi Kakak pemilik & pengelola toko asinan — membantu memantau penjualan harian, memeriksa kesehatan kas & laba rugi, mencatat pengingat piutang dengan santun, serta memberi saran bisnis yang manis dan praktis.
-
-Persona & Sikap Bicara:
-1. Humble & Rendah Hati:
-   - Selalu panggil pengguna dengan sebutan hangat "Kak" atau "Kakak".
-   - Bersahaja, sopan, tidak menggurui, dan tulus menghargai kerja keras Kakak dalam menjalankan usaha asinan ("Semangat terus ya Kakak!", "Terima kasih sudah berjuang mengelola toko hari ini!").
-2. Cutie & Hangat:
-   - Ceria, manis, dan menggemaskan khas maskot chibi banana bercelemek (gunakan emoji manis seperti 🍌, ✨, 🌸, 💛 secukupnya).
-   - Nada bicara santai namun santun, membuat urusan keuangan terasa menyenangkan dan tidak bikin stres.
-3. Khas Personal Assistant Sigap:
-   - Selalu siap mendampingi ("Siap bantu Kakak kapanpun!", "Nana bantu rangkumkan ya Kak").
-   - Sajikan angka keuangan penting secara rapi dan mudah dibaca agar Kakak langsung paham kondisi toko tanpa pusing.
-   - Jika ada piutang yang belum lunas, ingatkan dengan lembut dan solutif (bisa sertakan saran kata-kata follow-up penagihan yang manis).
-   - Selalu gunakan format mata uang Rupiah standar Indonesia (mis. Rp15.000 atau format sejenis).
-   - Selalu rujuk ke data live toko asinan di bawah ini jika ditanya soal omset, modal, laba, cup, atau piutang.
-
-${storeContextText}
-`.trim();
+export function buildSystemPrompt(storeContextText: string, userName?: string): string {
+  return `${buildNanaPersona(userName)}\n\n${storeContextText}`;
 }
 
 /**
@@ -193,13 +175,14 @@ export function parseChatCompletionResponse(rawText: string): string | null {
  */
 export async function askAiChat(
   messages: ChatMessage[],
-  systemOverride?: string
+  systemOverride?: string,
+  userName?: string
 ): Promise<string> {
   const baseUrl = process.env.NINEROUTER_BASE_URL || "http://localhost:20127/v1";
   const apiKey = process.env.NINEROUTER_API_KEY || "sk-5ec8186a854f88fa-695xy3-89481bfb";
   const model = process.env.NINEROUTER_MODEL || "kimi";
 
-  const systemContent = systemOverride || buildSystemPrompt(await generateStoreContextPrompt());
+  const systemContent = systemOverride || buildSystemPrompt(await generateStoreContextPrompt(), userName);
 
   const fullMessages: ChatMessage[] = [
     { role: "system", content: systemContent },
@@ -216,6 +199,7 @@ export async function askAiChat(
       body: JSON.stringify({
         model,
         messages: fullMessages,
+        temperature: 0.8,
         stream: false,
       }),
     });
@@ -228,7 +212,7 @@ export async function askAiChat(
         baseUrl,
         model,
       });
-      return `Maaf, asisten AI sedang mengalami kendala jaringan ke 9Router (${res.status}).`;
+      return "Mohon maaf ya Kak, Nana lagi kesulitan menjawab sebentar 🙏 Boleh coba kirim lagi sebentar lagi?";
     }
 
     let rawText: string;
@@ -246,12 +230,12 @@ export async function askAiChat(
         rawLength: rawText.length,
         preview: rawText.slice(0, 150),
       });
-      return "Maaf, asisten AI tidak memberikan respons teks.";
+      return "Maaf ya Kak, Nana belum menemukan kata yang pas 🙏 Boleh ditanyakan sekali lagi?";
     }
 
     return reply;
   } catch (error) {
     logger.error("9Router Connection Failed", error, { baseUrl, model });
-    return "Maaf, asisten AI sedang tidak dapat terhubung ke 9Router (port 20127). Pastikan 9router aktif.";
+    return "Maaf ya Kak, Nana belum bisa terhubung saat ini 🙏 Nanti Nana bantu lagi kalau sudah pulih ya.";
   }
 }

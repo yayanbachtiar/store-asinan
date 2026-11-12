@@ -31,6 +31,6 @@ export async function POST(request: Request) {
     messageCount: body.messages.length,
   });
 
-  const reply = await askAiChat(body.messages as ChatMessage[]);
+  const reply = await askAiChat(body.messages as ChatMessage[], undefined, guard.member.name);
   return NextResponse.json({ reply });
 }
