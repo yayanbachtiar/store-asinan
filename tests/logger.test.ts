@@ -110,7 +110,7 @@ describe("createLogger", () => {
     logger.info("Server started", { port: 3000 });
 
     expect(logSpy).toHaveBeenCalledTimes(1);
-    const parsed = JSON.parse(logSpy.mock.calls[0][0]);
+    const parsed = JSON.parse(String(logSpy.mock.calls[0][0]));
     expect(parsed.severity).toBe("INFO");
     expect(parsed.message).toBe("Server started");
     expect(parsed.port).toBe(3000);
@@ -122,7 +122,7 @@ describe("createLogger", () => {
     logger.error("Connection failed", new Error("ECONNREFUSED"), { host: "localhost" });
 
     expect(errorSpy).toHaveBeenCalledTimes(1);
-    const parsed = JSON.parse(errorSpy.mock.calls[0][0]);
+    const parsed = JSON.parse(String(errorSpy.mock.calls[0][0]));
     expect(parsed.severity).toBe("ERROR");
     expect(parsed.message).toBe("Connection failed");
     expect(parsed.error?.message).toBe("ECONNREFUSED");
@@ -136,7 +136,7 @@ describe("createLogger", () => {
 
     child.info("Child log event");
     expect(logSpy).toHaveBeenCalledTimes(1);
-    const parsed = JSON.parse(logSpy.mock.calls[0][0]);
+    const parsed = JSON.parse(String(logSpy.mock.calls[0][0]));
     expect(parsed.requestId).toBe("req-parent");
     expect(parsed["logging.googleapis.com/trace"]).toContain("trace-parent");
     expect(parsed["logging.googleapis.com/spanId"]).toBe("span-child");

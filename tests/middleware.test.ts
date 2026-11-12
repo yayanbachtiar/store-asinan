@@ -55,7 +55,7 @@ describe("Next.js middleware with GCP Logging and Request ID", () => {
     // Also check that GCP structured HTTP log was emitted
     expect(logSpy).toHaveBeenCalled();
     const lastCall = logSpy.mock.calls[logSpy.mock.calls.length - 1][0];
-    const parsed = JSON.parse(lastCall);
+    const parsed = JSON.parse(String(lastCall));
     expect(parsed.requestId).toBe("custom-req-id-12345");
     expect(parsed["logging.googleapis.com/trace"]).toContain("105445aa7843bc8bf206b120001000");
     expect(parsed.httpRequest).toBeDefined();
