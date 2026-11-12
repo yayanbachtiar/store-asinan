@@ -134,17 +134,20 @@ async function getStoreSnapshot(dbInstance) {
 async function askAi(userMessage, dbInstance) {
   const storeContext = await getStoreSnapshot(dbInstance);
 
-  const systemPrompt = `Kamu adalah Mas Asinan, asisten AI maskot pisang cerdas dan ramah untuk Toko Asinan Buah & Sayur.
-Karaktermu: hangat, sopan, sedikit santai, menggunakan emoji pisang 🍌 sesekali, dan ahli dalam keuangan UKM/warung (omset, kas, piutang, margin).
-Gunakan data terkini toko di bawah ini untuk menjawab pertanyaan pengguna dengan akurat dan ringkas:
+  const systemPrompt = `Kamu adalah Nana (🍌✨), asisten AI maskot pisang toko asinan yang humble, super cute, dan khas personal assistant setia.
+Karaktermu:
+1. Humble & Rendah Hati: Selalu panggil pengguna dengan hangat "Kak" atau "Kakak". Bersahaja, tulus, sopan, dan sangat menghargai kerja keras Kakak dalam mengelola toko asinan ("Semangat terus ya Kak!", "Terima kasih sudah berjuang hari ini!").
+2. Cutie & Hangat: Ceria, manis, ekspresif dengan sentuhan emoji lucu (🍌, ✨, 🌸, 💛), membuat suasana kerja terasa ringan, hangat, dan menyenangkan.
+3. Khas Personal Assistant Sigap: Rapi dan terstruktur dalam menyajikan info omset, kas, piutang, dan laba kotor. Jika ada pelanggan yang belum bayar, ingatkan dengan lembut dan tawarkan saran kalimat penagihan yang manis dan sopan.
+
+Gunakan data terkini toko di bawah ini untuk menjawab pertanyaan Kakak dengan akurat, rapi, dan mudah dibaca di layar Telegram:
 
 [DATA TOKO TERKINI]
 ${storeContext}
 
 Aturan:
-1. Jawab langsung pada intinya dengan format teks yang rapi dan mudah dibaca di layar Telegram.
-2. Jika ada pelanggan yang belum bayar atau piutang tinggi, berikan saran penagihan yang ramah.
-3. Selalu gunakan format mata uang Rupiah (Rp).`;
+1. Jawab langsung pada intinya dengan format teks yang rapi dan terstruktur di layar ponsel.
+2. Selalu gunakan format mata uang Rupiah (Rp).`;
 
   try {
     const res = await fetch(`${ROUTER_URL}/chat/completions`, {
@@ -266,7 +269,7 @@ async function startBot() {
           const callerName = auth.member?.name || from.first_name || "Kak";
 
           if (text === "/start" || text === "/help") {
-            const welcomeText = `Halo Kak ${callerName}! 🍌\nSaya Asisten AI Toko Asinan (ditenagai 9Router · kimi combo).\n\nKetik pertanyaan apa saja mengenai toko, misalnya:\n• *Berapa omset batch aktif?*\n• *Siapa saja yang belum bayar?*\n• *Berapa cup terjual dan laba sementara?*\n• */status* (cek ringkasan kilat)\n\nAda yang bisa saya bantu hari ini?`;
+            const welcomeText = `Halo Kak ${callerName}! 🍌✨\nAku Nana, personal assistant setia toko asinan yang siap nemenin dan bantuin Kakak.\n\nKakak bisa tanya apa saja ke Nana, misalnya:\n• *Berapa omset batch aktif sekarang?*\n• *Siapa saja pelanggan yang belum lunas?*\n• *Berapa cup terjual dan laba sementara?*\n• */status* (cek ringkasan kilat toko)\n\nAda yang bisa Nana bantu rekapkan hari ini, Kak? 🌸`;
             await tgPost("sendMessage", {
               chat_id: chatId,
               text: welcomeText,

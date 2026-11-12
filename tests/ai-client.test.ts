@@ -41,6 +41,10 @@ describe("ai-client buildSystemPrompt", () => {
   it("contains persona and rules for Asinan assistant", () => {
     const prompt = buildSystemPrompt("Context toko test");
     expect(prompt).toContain("Asisten AI Toko Asinan");
+    expect(prompt).toContain("Nana");
+    expect(prompt).toContain("humble");
+    expect(prompt).toContain("cute");
+    expect(prompt).toContain("personal assistant");
     expect(prompt).toContain("Context toko test");
     expect(prompt).toContain("Rupiah");
   });
